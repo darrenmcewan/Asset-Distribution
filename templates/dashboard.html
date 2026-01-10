@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Asset Distribution{% endblock %}
+
+{% block content %}
+<h1>Welcome, {{ member.name }}</h1>
+<p class="text-light mb-3">Here's your overview of the asset distribution process.</p>
+
+<!-- Phase Banner -->
+{% if distribution_state %}
+<div class="phase-banner {% if distribution_state.current_phase == 'legacy_round' %}legacy{% elif distribution_state.current_phase == 'category_distribution' %}distribution{% endif %}">
+    <div>
+        <span class="phase-label">Current Phase:</span>
+        <span class="phase-value">{{ distribution_state.get_current_phase_display }}</span>
+    </div>
+    {% if distribution_state.current_phase == 'category_distribution' and distribution_state.current_category %}
+    <div>
+        <span class="phase-label">Category:</span>
+        <span class="phase-value">{{ distribution_state.current_category.name }}</span>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ assigned_count }}</div>
+        <div class="stat-label">Items Assigned to You</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ interest_count }}</div>
+        <div class="stat-label">Items on Your Wishlist</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+    <!-- Quick Actions -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Quick Actions</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <a href="{% url 'browse_assets' %}" class="btn btn-primary">Browse All Assets</a>
+            <a href="{% url 'my_interests' %}" class="btn btn-secondary">View My Wishlist</a>
+            <a href="{% url 'my_items' %}" class="btn btn-secondary">View My Assigned Items</a>
+            {% if distribution_state.current_phase == 'legacy_round' %}
+            <a href="{% url 'legacy_round' %}" class="btn btn-warning">Submit Legacy Round Choices</a>
+            {% endif %}
+            {% if member.can_upload %}
+            <a href="{% url 'upload_asset' %}" class="btn btn-success">Upload New Asset</a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Recently Assigned to You -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Your Assigned Items</h3>
+            {% if assigned_count > 0 %}
+            <a href="{% url 'my_items' %}" class="btn btn-sm btn-secondary">View All</a>
+            {% endif %}
+        </div>
+        {% if assigned_items %}
+        <ul style="list-style: none;">
+            {% for item in assigned_items %}
+            <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);">
+                <a href="{% url 'asset_detail' item.id %}">{{ item.name }}</a>
+                <span class="text-muted" style="font-size: 0.875rem;">- {{ item.category.name }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted">No items have been assigned to you yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Unavailable Items You Wanted -->
+{% if unavailable_wanted %}
+<div class="card mt-3">
+    <div class="card-header">
+        <h3 class="card-title">Items You Wanted (No Longer Available)</h3>
+    </div>
+    <p class="text-light" style="font-size: 0.875rem; margin-bottom: 1rem;">
+        These items from your wishlist have been claimed by others or removed.
+    </p>
+    <ul style="list-style: none;">
+        {% for interest in unavailable_wanted %}
+        <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);">
+            <span style="text-decoration: line-through; color: var(--color-text-muted);">{{ interest.asset.name }}</span>
+            <span class="badge badge-{{ interest.asset.status }}">{{ interest.asset.get_status_display }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% endblock %}

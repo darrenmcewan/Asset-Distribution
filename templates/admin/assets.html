@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Assets - Admin{% endblock %}
+
+{% block content %}
+<h1>Manage Assets</h1>
+
+<!-- Admin Navigation -->
+<nav class="admin-nav">
+    <a href="{% url 'admin_panel' %}">Dashboard</a>
+    <a href="{% url 'admin_assets' %}" class="active">Assets</a>
+    <a href="{% url 'admin_categories' %}">Categories</a>
+    <a href="{% url 'admin_members' %}">Family Members</a>
+    <a href="{% url 'admin_interests' %}">View Interests</a>
+    <a href="{% url 'admin_distribution' %}">Distribution Control</a>
+    <a href="{% url 'admin_legacy' %}">Legacy Round</a>
+    <a href="{% url 'admin_reports' %}">Reports</a>
+    <a href="{% url 'admin_settings' %}">Settings</a>
+</nav>
+
+<div class="flex justify-between items-center mb-3">
+    <p class="text-light">Manage all estate assets</p>
+    <a href="{% url 'admin_add_asset' %}" class="btn btn-success">+ Add New Asset</a>
+</div>
+
+<!-- Filters -->
+<form method="get" class="filter-bar">
+    <div class="filter-group">
+        <label>Category:</label>
+        <select name="category" onchange="this.form.submit()">
+            <option value="">All Categories</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Status:</label>
+        <select name="status" onchange="this.form.submit()">
+            <option value="">All Status</option>
+            <option value="available" {% if selected_status == 'available' %}selected{% endif %}>Available</option>
+            <option value="claimed" {% if selected_status == 'claimed' %}selected{% endif %}>Claimed</option>
+            <option value="sold" {% if selected_status == 'sold' %}selected{% endif %}>Sold</option>
+            <option value="donated" {% if selected_status == 'donated' %}selected{% endif %}>Donated</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Search:</label>
+        <input type="text" name="search" value="{{ search }}" placeholder="Search...">
+        <button type="submit" class="btn btn-sm btn-secondary">Search</button>
+    </div>
+</form>
+
+<!-- Assets Table -->
+<div class="card">
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Photo</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Assigned To</th>
+                    <th>Interests</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for asset in assets %}
+                <tr>
+                    <td style="width: 60px;">
+                        {% with asset.get_primary_photo as photo %}
+                        {% if photo %}
+                        <img src="{{ photo.image.url }}" alt="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                        {% else %}
+                        <div style="width: 50px; height: 50px; background: var(--color-bg-light); border-radius: 4px;"></div>
+                        {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        <a href="{% url 'asset_detail' asset.id %}">{{ asset.name }}</a>
+                    </td>
+                    <td>{{ asset.category.name }}</td>
+                    <td>
+                        <span class="badge badge-{{ asset.status }}">{{ asset.get_status_display }}</span>
+                    </td>
+                    <td>
+                        {% if asset.assigned_to %}
+                        {{ asset.assigned_to.name }}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ asset.get_interest_count }}</td>
+                    <td>
+                        <div class="flex gap-1">
+                            <a href="{% url 'admin_edit_asset' asset.id %}" class="btn btn-sm btn-secondary">Edit</a>
+                            {% if asset.status == 'available' %}
+                            <button type="button" class="btn btn-sm btn-primary" 
+                                    onclick="showAssignModal({{ asset.id }}, '{{ asset.name|escapejs }}')">Assign</button>
+                            {% endif %}
+                            <form method="post" action="{% url 'admin_delete_asset' asset.id %}" 
+                                  onsubmit="return confirm('Delete {{ asset.name }}?')" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">No assets found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if assets.has_other_pages %}
+<div class="pagination">
+    {% if assets.has_previous %}
+    <a href="?page={{ assets.previous_page_number }}">← Previous</a>
+    {% endif %}
+    <span class="current">Page {{ assets.number }} of {{ assets.paginator.num_pages }}</span>
+    {% if assets.has_next %}
+    <a href="?page={{ assets.next_page_number }}">Next →</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Quick Status Actions -->
+<div class="card mt-3">
+    <h4>Quick Status Updates</h4>
+    <p class="text-muted" style="font-size: 0.875rem;">Mark items as sold or donated using the edit page for each asset.</p>
+</div>
+
+<!-- Assign Modal (hidden by default) -->
+<div id="assignModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="card" style="max-width: 400px; margin: auto;">
+        <h3 id="assignModalTitle">Assign Item</h3>
+        <form method="post" action="{% url 'admin_direct_assign' %}">
+            {% csrf_token %}
+            <input type="hidden" name="asset_id" id="assignAssetId">
+            <div class="form-group">
+                <label class="form-label">Assign to:</label>
+                <select name="member_id" class="form-select" required>
+                    <option value="">Select family member...</option>
+                    {% for branch in branches %}
+                    <optgroup label="{{ branch.name }}">
+                        {% for member in branch.members.all %}
+                        <option value="{{ member.id }}">{{ member.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="btn btn-primary">Assign</button>
+                <button type="button" class="btn btn-secondary" onclick="hideAssignModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showAssignModal(assetId, assetName) {
+    document.getElementById('assignAssetId').value = assetId;
+    document.getElementById('assignModalTitle').textContent = 'Assign: ' + assetName;
+    document.getElementById('assignModal').style.display = 'flex';
+}
+
+function hideAssignModal() {
+    document.getElementById('assignModal').style.display = 'none';
+}
+</script>
+{% endblock %}

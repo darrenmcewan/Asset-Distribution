@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Asset Distribution</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <h1 class="login-title">Admin Login</h1>
+            <p class="login-subtitle">Enter the admin password to continue</p>
+            
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+            
+            <form method="post" action="{% url 'admin_login' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_password" class="form-label">Admin Password</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                    <div class="form-error">{{ form.password.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                    Login as Admin
+                </button>
+            </form>
+            
+            <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--color-border);">
+                <a href="{% url 'login' %}" class="text-muted">← Back to Family Login</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ asset.name }} - Asset Distribution{% endblock %}
+
+{% block content %}
+<div class="mb-2">
+    <a href="{% url 'browse_assets' %}" class="text-light">← Back to Assets</a>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+    <!-- Photos -->
+    <div>
+        {% if photos %}
+        {% with photos.first as main_photo %}
+        <img src="{{ main_photo.image.url }}" alt="{{ asset.name }}" class="photo-main" id="mainPhoto">
+        {% endwith %}
+        
+        {% if photos.count > 1 %}
+        <div class="photo-gallery">
+            {% for photo in photos %}
+            <img src="{{ photo.image.url }}" alt="{{ asset.name }}" 
+                 onclick="document.getElementById('mainPhoto').src = this.src">
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="photo-main" style="display: flex; align-items: center; justify-content: center; background: var(--color-bg-light); height: 300px;">
+            <span class="text-muted">No photos available</span>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Details -->
+    <div>
+        <div class="flex items-center gap-2 mb-2">
+            <h1 style="margin: 0;">{{ asset.name }}</h1>
+            <span class="badge badge-{{ asset.status }}">{{ asset.get_status_display }}</span>
+        </div>
+        
+        <p class="text-light mb-3">{{ asset.category.name }}</p>
+        
+        {% if asset.description %}
+        <div class="card">
+            <h4>Description</h4>
+            <p>{{ asset.description }}</p>
+        </div>
+        {% endif %}
+        
+        {% if asset.condition %}
+        <div class="card">
+            <h4>Condition</h4>
+            <p>{{ asset.condition }}</p>
+        </div>
+        {% endif %}
+        
+        {% if asset.notes %}
+        <div class="card">
+            <h4>Notes</h4>
+            <p>{{ asset.notes }}</p>
+        </div>
+        {% endif %}
+        
+        {% if asset.assigned_to %}
+        <div class="card">
+            <h4>Assigned To</h4>
+            <p><strong>{{ asset.assigned_to.name }}</strong> ({{ asset.assigned_to.branch.name }})</p>
+        </div>
+        {% endif %}
+        
+        <!-- Interest Actions -->
+        {% if asset.status == 'available' %}
+        <div class="card" style="background-color: var(--color-bg-light);">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4 style="margin: 0;">Express Interest</h4>
+                    <p class="text-muted" style="margin: 0.25rem 0 0 0; font-size: 0.875rem;">
+                        {% if interest %}
+                        You're interested in this item (Rank: {{ interest.ranking }})
+                        {% else %}
+                        Click to add this to your wishlist
+                        {% endif %}
+                    </p>
+                </div>
+                <button class="interest-btn {% if interest %}interested{% endif %}"
+                        onclick="toggleInterest({{ asset.id }}, this)"
+                        id="interestBtn">
+                    {% if interest %}
+                    ✓ I Want This
+                    {% else %}
+                    ♡ I Want This
+                    {% endif %}
+                </button>
+            </div>
+            
+            {% if interest %}
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border);">
+                <form method="post" action="{% url 'update_ranking' interest.id %}" id="rankForm">
+                    {% csrf_token %}
+                    <div class="flex items-center gap-2">
+                        <label for="ranking">Your Ranking:</label>
+                        <input type="number" name="ranking" id="ranking" value="{{ interest.ranking }}" 
+                               min="1" class="form-input" style="width: 80px;">
+                        <button type="submit" class="btn btn-sm btn-secondary">Update</button>
+                        <span class="text-muted" style="font-size: 0.875rem;">(Lower = Higher Priority)</span>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleInterest(assetId, button) {
+    fetch(`/assets/${assetId}/toggle-interest/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload to update the ranking section
+            location.reload();
+        } else {
+            alert(data.error || 'An error occurred');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred');
+    });
+}
+
+// Handle ranking form via AJAX
+document.getElementById('rankForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Ranking updated!');
+        } else {
+            alert(data.error || 'An error occurred');
+        }
+    })
+    .catch(error => {
+        // Form might redirect, which is fine
+        console.log('Form submitted');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports - Admin{% endblock %}
+
+{% block content %}
+<h1>Reports</h1>
+
+<nav class="admin-nav">
+    <a href="{% url 'admin_panel' %}">Dashboard</a>
+    <a href="{% url 'admin_assets' %}">Assets</a>
+    <a href="{% url 'admin_categories' %}">Categories</a>
+    <a href="{% url 'admin_members' %}">Family Members</a>
+    <a href="{% url 'admin_interests' %}">View Interests</a>
+    <a href="{% url 'admin_distribution' %}">Distribution Control</a>
+    <a href="{% url 'admin_legacy' %}">Legacy Round</a>
+    <a href="{% url 'admin_reports' %}" class="active">Reports</a>
+    <a href="{% url 'admin_settings' %}">Settings</a>
+</nav>
+
+<div class="flex justify-between items-center mb-3">
+    <p class="text-light">View distribution statistics and export data.</p>
+    <a href="{% url 'admin_export_csv' %}" class="btn btn-primary">📥 Export CSV</a>
+</div>
+
+<!-- By Category -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Assets by Category</h3>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Total</th>
+                <th>Available</th>
+                <th>Claimed</th>
+                <th>Sold</th>
+                <th>Donated</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cat in categories %}
+            <tr>
+                <td><strong>{{ cat.name }}</strong></td>
+                <td>{{ cat.total }}</td>
+                <td><span class="badge badge-available">{{ cat.available }}</span></td>
+                <td><span class="badge badge-claimed">{{ cat.claimed }}</span></td>
+                <td><span class="badge badge-sold">{{ cat.sold }}</span></td>
+                <td><span class="badge badge-donated">{{ cat.donated }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- By Family Member -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Items Received by Member</h3>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Member</th>
+                <th>Branch</th>
+                <th>Items Received</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in members %}
+            <tr>
+                <td>
+                    <strong>{{ member.name }}</strong>
+                    {% if member.is_father %}<span class="text-muted">(Father)</span>{% endif %}
+                </td>
+                <td>{{ member.branch.code }}</td>
+                <td>
+                    {% if member.items_received > 0 %}
+                    <span class="badge badge-claimed">{{ member.items_received }}</span>
+                    {% else %}
+                    <span class="text-muted">0</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

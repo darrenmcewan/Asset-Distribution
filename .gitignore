@@ -1,0 +1,36 @@
+# Database
+db.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+ENV/
+
+# Django
+*.log
+local_settings.py
+staticfiles/
+
+# Media files (optional - comment out if you want to track uploads)
+media/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+*.pem

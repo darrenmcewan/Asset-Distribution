@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if asset %}Edit{% else %}Add{% endif %} Asset - Admin{% endblock %}
+
+{% block content %}
+<div class="mb-2">
+    <a href="{% url 'admin_assets' %}" class="text-light">← Back to Assets</a>
+</div>
+
+<h1>{% if asset %}Edit Asset{% else %}Add New Asset{% endif %}</h1>
+
+<form method="post" enctype="multipart/form-data" class="card">
+    {% csrf_token %}
+    
+    {% if form.non_field_errors %}
+    <div class="alert alert-error">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="form-group">
+        <label class="form-label">Item Name *</label>
+        {{ form.name }}
+        {% if form.name.errors %}<div class="form-error">{{ form.name.errors.0 }}</div>{% endif %}
+    </div>
+    
+    <div class="form-group">
+        <label class="form-label">Description</label>
+        {{ form.description }}
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+            <label class="form-label">Existing Category</label>
+            {{ form.category }}
+        </div>
+        <div class="form-group">
+            <label class="form-label">Or New Category</label>
+            {{ form.new_category }}
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label class="form-label">Condition</label>
+        {{ form.condition }}
+    </div>
+    
+    <div class="form-group">
+        <label class="form-label">Notes</label>
+        {{ form.notes }}
+    </div>
+    
+    {% if asset %}
+    <!-- Existing Photos -->
+    {% if photos %}
+    <div class="form-group">
+        <label class="form-label">Existing Photos</label>
+        <div class="photo-gallery">
+            {% for photo in photos %}
+            <div style="position: relative;">
+                <img src="{{ photo.image.url }}" alt="">
+                <button type="button" onclick="deletePhoto({{ photo.id }})" 
+                        style="position: absolute; top: 4px; right: 4px; background: var(--color-danger); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">×</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+    
+    <div class="form-group">
+        <label class="form-label">{% if asset %}Add More Photos{% else %}Photos{% endif %}</label>
+        <input type="file" name="photos" multiple accept="image/*" class="form-input">
+    </div>
+    
+    {% if asset %}
+    <div class="form-group">
+        <label class="form-label">Status</label>
+        <div class="flex gap-2">
+            <form method="post" action="{% url 'admin_mark_status' asset.id %}" style="display: inline;">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="sold">
+                <button type="submit" class="btn btn-sm btn-warning" {% if asset.status == 'sold' %}disabled{% endif %}>Mark as Sold</button>
+            </form>
+            <form method="post" action="{% url 'admin_mark_status' asset.id %}" style="display: inline;">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="donated">
+                <button type="submit" class="btn btn-sm btn-secondary" {% if asset.status == 'donated' %}disabled{% endif %}>Mark as Donated</button>
+            </form>
+        </div>
+        <p class="form-help">Current status: <span class="badge badge-{{ asset.status }}">{{ asset.get_status_display }}</span></p>
+    </div>
+    {% endif %}
+    
+    <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary btn-lg">{% if asset %}Update{% else %}Add{% endif %} Asset</button>
+        <a href="{% url 'admin_assets' %}" class="btn btn-secondary btn-lg">Cancel</a>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deletePhoto(photoId) {
+    if (confirm('Delete this photo?')) {
+        fetch(`/admin/photos/${photoId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

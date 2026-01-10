@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Asset - Asset Distribution{% endblock %}
+
+{% block content %}
+<div class="mb-2">
+    <a href="{% url 'browse_assets' %}" class="text-light">← Back to Assets</a>
+</div>
+
+<h1>Upload New Asset</h1>
+<p class="text-light mb-3">Add a new item to the estate inventory.</p>
+
+<form method="post" enctype="multipart/form-data" class="card">
+    {% csrf_token %}
+    
+    {% if form.non_field_errors %}
+    <div class="alert alert-error">
+        {% for error in form.non_field_errors %}
+        {{ error }}
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="form-group">
+        <label class="form-label" for="id_name">Item Name *</label>
+        {{ form.name }}
+        {% if form.name.errors %}
+        <div class="form-error">{{ form.name.errors.0 }}</div>
+        {% endif %}
+    </div>
+    
+    <div class="form-group">
+        <label class="form-label" for="id_description">Description</label>
+        {{ form.description }}
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+            <label class="form-label" for="id_category">Existing Category</label>
+            {{ form.category }}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="id_new_category">Or New Category</label>
+            {{ form.new_category }}
+            <p class="form-help">Enter a new category name if not in the list</p>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label class="form-label" for="id_condition">Condition</label>
+        {{ form.condition }}
+    </div>
+    
+    <div class="form-group">
+        <label class="form-label" for="id_notes">Notes</label>
+        {{ form.notes }}
+        <p class="form-help">Any special history, memories, or information about this item</p>
+    </div>
+    
+    <div class="form-group">
+        <label class="form-label">Photos</label>
+        <input type="file" name="photos" multiple accept="image/*" class="form-input">
+        <p class="form-help">You can select multiple photos at once</p>
+    </div>
+    
+    <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary btn-lg">Upload Asset</button>
+        <a href="{% url 'browse_assets' %}" class="btn btn-secondary btn-lg">Cancel</a>
+    </div>
+</form>
+
+{% endblock %}

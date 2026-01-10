@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Browse Assets - Asset Distribution{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-3">
+    <h1>Browse Assets</h1>
+</div>
+
+<!-- Filters -->
+<form method="get" class="filter-bar">
+    <div class="filter-group">
+        <label for="category">Category:</label>
+        <select name="category" id="category" class="form-select" onchange="this.form.submit()">
+            <option value="">All Categories</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:"s" %}selected{% endif %}>
+                {{ cat.name }} ({{ cat.asset_count }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div class="filter-group">
+        <label for="status">Status:</label>
+        <select name="status" id="status" class="form-select" onchange="this.form.submit()">
+            <option value="available" {% if status_filter == 'available' %}selected{% endif %}>Available</option>
+            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Items</option>
+            <option value="claimed" {% if status_filter == 'claimed' %}selected{% endif %}>Claimed</option>
+        </select>
+    </div>
+    
+    <div class="filter-group">
+        <label for="search">Search:</label>
+        <input type="text" name="search" id="search" value="{{ search }}" 
+               class="form-input" placeholder="Search by name..." style="width: 200px;">
+        <button type="submit" class="btn btn-secondary btn-sm">Search</button>
+    </div>
+    
+    {% if search or selected_category %}
+    <a href="{% url 'browse_assets' %}" class="btn btn-sm btn-secondary">Clear Filters</a>
+    {% endif %}
+</form>
+
+<!-- Asset Grid -->
+{% if assets %}
+<div class="asset-grid">
+    {% for asset in assets %}
+    <div class="asset-card">
+        <a href="{% url 'asset_detail' asset.id %}">
+            <div class="asset-card-image">
+                {% with asset.get_primary_photo as photo %}
+                {% if photo %}
+                <img src="{{ photo.image.url }}" alt="{{ asset.name }}">
+                {% else %}
+                <span class="no-image">No Photo</span>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </a>
+        <div class="asset-card-body">
+            <h3 class="asset-card-title">
+                <a href="{% url 'asset_detail' asset.id %}" style="color: inherit;">{{ asset.name }}</a>
+            </h3>
+            <p class="asset-card-category">{{ asset.category.name }}</p>
+            <span class="badge badge-{{ asset.status }}">{{ asset.get_status_display }}</span>
+        </div>
+        <div class="asset-card-footer">
+            {% if asset.status == 'available' %}
+            <button class="interest-btn {% if asset.id in my_interest_asset_ids %}interested{% endif %}"
+                    onclick="toggleInterest({{ asset.id }}, this)"
+                    data-asset-id="{{ asset.id }}">
+                {% if asset.id in my_interest_asset_ids %}
+                ✓ I Want This
+                {% else %}
+                ♡ I Want This
+                {% endif %}
+            </button>
+            {% else %}
+            <span class="text-muted" style="font-size: 0.875rem;">
+                {% if asset.assigned_to %}
+                Claimed by {{ asset.assigned_to.name }}
+                {% else %}
+                {{ asset.get_status_display }}
+                {% endif %}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if assets.has_other_pages %}
+<div class="pagination">
+    {% if assets.has_previous %}
+    <a href="?page={{ assets.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">← Previous</a>
+    {% endif %}
+    
+    <span class="current">Page {{ assets.number }} of {{ assets.paginator.num_pages }}</span>
+    
+    {% if assets.has_next %}
+    <a href="?page={{ assets.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Next →</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">📦</div>
+    <h3 class="empty-state-title">No Assets Found</h3>
+    <p>Try adjusting your filters or search terms.</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleInterest(assetId, button) {
+    fetch(`/assets/${assetId}/toggle-interest/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.interested) {
+                button.classList.add('interested');
+                button.innerHTML = '✓ I Want This';
+            } else {
+                button.classList.remove('interested');
+                button.innerHTML = '♡ I Want This';
+            }
+        } else {
+            alert(data.error || 'An error occurred');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred');
+    });
+}
+</script>
+{% endblock %}

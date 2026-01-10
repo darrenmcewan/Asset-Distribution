@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings - Admin{% endblock %}
+
+{% block content %}
+<h1>Settings</h1>
+
+<nav class="admin-nav">
+    <a href="{% url 'admin_panel' %}">Dashboard</a>
+    <a href="{% url 'admin_assets' %}">Assets</a>
+    <a href="{% url 'admin_categories' %}">Categories</a>
+    <a href="{% url 'admin_members' %}">Family Members</a>
+    <a href="{% url 'admin_interests' %}">View Interests</a>
+    <a href="{% url 'admin_distribution' %}">Distribution Control</a>
+    <a href="{% url 'admin_legacy' %}">Legacy Round</a>
+    <a href="{% url 'admin_reports' %}">Reports</a>
+    <a href="{% url 'admin_settings' %}" class="active">Settings</a>
+</nav>
+
+<div style="max-width: 500px;">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Change Password</h3>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="alert alert-error">
+                {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+            </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label class="form-label">Which Password?</label>
+                {{ form.password_type }}
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">New Password</label>
+                {{ form.new_password }}
+                {% if form.new_password.errors %}
+                <div class="form-error">{{ form.new_password.errors.0 }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Confirm Password</label>
+                {{ form.confirm_password }}
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Change Password</button>
+        </form>
+    </div>
+    
+    <div class="alert alert-info mt-3">
+        <strong>Security Note:</strong> After changing passwords, make sure to communicate the new password 
+        to relevant family members securely.
+    </div>
+</div>
+
+{% endblock %}
