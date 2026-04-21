@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Users - Admin{% endblock %}
+{% block content %}
+<h1>Users</h1>
+<nav class="admin-nav">
+    <a href="{% url 'admin_panel' %}">Dashboard</a>
+    <a href="{% url 'admin_users' %}" class="active">Users</a>
+    <a href="{% url 'admin_assets' %}">Assets</a>
+    <a href="{% url 'admin_categories' %}">Categories</a>
+    <a href="{% url 'admin_interests' %}">Interests</a>
+    <a href="{% url 'admin_reports' %}">Reports</a>
+</nav>
+
+<form method="get" class="filter-bar mb-3">
+    <div class="filter-group">
+        <label for="branch">Branch:</label>
+        <select name="branch" id="branch" class="form-select" onchange="this.form.submit()">
+            <option value="">All Branches</option>
+            {% for b in branches %}
+            <option value="{{ b.code }}" {% if selected_branch == b.code %}selected{% endif %}>{{ b.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% if selected_branch %}<a href="{% url 'admin_users' %}" class="btn btn-sm btn-secondary">Clear</a>{% endif %}
+</form>
+
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr><th>Username</th><th>Email</th><th>Branch</th><th>Items</th><th>Last Login</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td><strong>{{ u.username }}</strong>{% if u.is_staff %} <span class="badge badge-claimed">Admin</span>{% endif %}</td>
+                <td>{{ u.email|default:"—" }}</td>
+                <td>{% if u.profile %}{{ u.profile.branch.name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td>{{ u.assigned_count }}</td>
+                <td>{% if u.last_login %}{{ u.last_login|date:"M j, Y g:i a" }}{% else %}<span class="text-muted">Never</span>{% endif %}</td>
+                <td>{{ u.date_joined|date:"M j, Y" }}</td>
+                <td>{% if u.is_active %}<span class="text-success">Active</span>{% else %}<span class="text-muted">Disabled</span>{% endif %}</td>
+                <td>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{% url 'admin_reset_password' u.id %}" class="btn btn-sm btn-secondary">Reset PW</a>
+                        <button class="btn btn-sm btn-secondary" onclick="toggleStaff({{ u.id }})">{% if u.is_staff %}Revoke Admin{% else %}Make Admin{% endif %}</button>
+                        <button class="btn btn-sm btn-secondary" onclick="toggleActive({{ u.id }})">{% if u.is_active %}Disable{% else %}Enable{% endif %}</button>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="text-muted" style="padding: 1rem;">No users found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const csrf = '{{ csrf_token }}';
+function postAndReload(url) {
+    fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrf } })
+        .then(r => r.json())
+        .then(d => { if (d.success) location.reload(); else alert(d.error || 'Failed'); });
+}
+function toggleStaff(id) { postAndReload(`/admin-panel/users/${id}/toggle-staff/`); }
+function toggleActive(id) { postAndReload(`/admin-panel/users/${id}/toggle-active/`); }
+</script>
+{% endblock %}

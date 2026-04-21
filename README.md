@@ -1,119 +1,191 @@
-# Asset Distribution System
+# Asset Distribution
 
-A Django web application for managing fair distribution of estate assets among family members.
+A small Django app for a family to catalog estate items, express interest in them,
+and let an administrator assign each item to a person — with email notifications and
+self-service password reset.
 
-## Features
+This rewrite removes the old turn-based "phase" workflow. Anyone with an account can
+browse the catalog and rank their interests at any time; the administrator decides
+who ultimately gets each item.
 
-- **Family Structure**: Supports 3 family branches with customizable member lists
-- **Asset Management**: Upload and categorize assets with photos
-- **Interest Tracking**: Family members express interest and rank desired items
-- **Legacy Priority Round**: Special round for sentimental must-have items
-- **Fair Distribution**: Randomized turn order ensures equitable distribution across branches
-- **Admin Control**: Full administrative control over the distribution process
+---
 
-## Quick Start
+## Highlights
 
-### 1. Set Up Python Environment
+- **Real user accounts** — Django's built-in auth (PBKDF2-hashed passwords).
+- **Invite-code signup** — anyone with the shared invite code can self-register.
+- **Drag-to-reorder interests** — strict 1..N priority per user, no ties possible.
+- **Branch-aware admin** — every user belongs to a branch (Lynn / Richard / Rob)
+  so the admin can see distribution balance at a glance.
+- **Self-service password reset** — Google SMTP if configured, otherwise the email
+  is printed to the console for development.
+- **Assignment notifications** — when the admin assigns an item, the recipient is
+  emailed automatically.
+- **Manual password reset** — admin can set a temporary password for any user and
+  hand it over verbally as a fallback.
+
+---
+
+## Quick start
 
 ```bash
-# Create and activate virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# 1. Clone and enter the project
+cd Asset-Distribution
 
-# Install dependencies
+# 2. Install dependencies
 pip install -r requirements.txt
-```
 
-### 2. Initialize Database
+# 3. Copy the example env and fill in what you need
+cp .env.example .env
+# Edit .env — at minimum set DJANGO_SECRET_KEY.
+# Email settings are optional; without them, password-reset emails print to console.
 
-```bash
-# Run migrations
-python manage.py makemigrations core
+# 4. Run migrations and seed branches + categories
 python manage.py migrate
-
-# Set up initial data (family members, categories, passwords)
 python manage.py setup_initial_data
-```
 
-### 3. Run Development Server
+# 5. Create the first admin user
+#    Either set ASSET_ADMIN_* in .env and re-run setup_initial_data,
+#    or use the standard Django command:
+python manage.py createsuperuser
 
-```bash
+# 6. Start the server
 python manage.py runserver
 ```
 
-Visit `http://127.0.0.1:8000` in your browser.
+Open http://localhost:8000/ — you'll be sent to the login page.
 
-## Default Passwords
+> **First-time admin tip:** after `createsuperuser` finishes, log in once at
+> `/django-admin/` and attach a `UserProfile` (with a branch) to the new user, or
+> create the admin via `setup_initial_data` instead — that command sets the profile
+> automatically.
 
-| Type | Password |
-|------|----------|
-| Family | `` |
-| Admin | `` |
+---
 
-**⚠️ Change these immediately after first login!**
+## How signup works
 
-## Usage
+1. A prospective user visits `/signup/`.
+2. They pick a username, email, password, and **branch** (Lynn / Richard / Rob).
+3. They enter the **invite code** — the value of `SIGNUP_INVITE_CODE` from `.env`
+   (default `reviresco`).
+4. The account is created immediately. No admin approval step.
 
-### For Family Members
+To rotate the invite code, just change `SIGNUP_INVITE_CODE` in `.env` and restart.
 
-1. Enter the family password
-2. Select your name from the list
-3. Browse assets and click "I Want This" on items you want
-4. Rank your interests (lower number = higher priority)
-5. When Legacy Round is active, submit your Top 3 must-have items
+---
 
-### For Administrators
+## How interests work
 
-1. Log in with the admin password
-2. Upload assets with photos
-3. Set the distribution phase
-4. Run the Legacy Round and resolve conflicts
-5. For Category Distribution:
-   - Select a category
-   - Randomize branch order
-   - Assign items based on turn order and interests
+- On any asset detail page, click **♡ I Want This** to add it to your wishlist.
+  It's appended to the bottom of your list.
+- Visit **My Interests** to see your full ranked list.
+- **Drag rows** by the ☰ handle to reorder. The new order saves automatically.
+- Position 1 is your most-wanted item. Positions are always contiguous (1..N) and
+  unique per user — you cannot tie two items.
+- Removing an interest re-numbers everything below it.
 
-## Distribution Logic
+---
 
-### Family Structure
-- **Branch A (Lynn)**: Father + 6 children
-- **Branch B (Richard)**: Father + 6 children  
-- **Branch C (Rob)**: 2 children representing their deceased father
+## Admin panel
 
-### Turn Order Rules
-- Each category has a randomized branch order
-- Within Branches A & B: Father picks first and last, children randomized in between
-- Branch C: Brian and Michael alternate to fill equivalent slots
-- If someone passes, their pick reverts to the branch father (preserves 1/3 share)
+Available at `/admin-panel/` for any user with `is_staff=True`. (The Django admin
+remains at `/django-admin/`.)
 
-## Deployment to PythonAnywhere
+- **Dashboard** — totals, plus how many items each branch has been assigned.
+- **Users** — list of every account, filterable by branch, with last-login,
+  number of items received, and buttons to:
+    - Reset the user's password manually.
+    - Toggle admin (`is_staff`) status.
+    - Disable/enable the account.
+- **Assets** — full CRUD plus a quick-assign modal. Assigning an item triggers an
+  email notification to the recipient (if email is configured).
+- **Categories** — add/rename/delete (cannot delete a category that has items).
+- **Interests** — view interest by item or by person.
+- **Reports** — totals per category and per user; CSV export.
 
-1. Upload project files to PythonAnywhere
-2. Create a virtual environment and install requirements
-3. Set `DEBUG = False` in settings.py
-4. Configure ALLOWED_HOSTS with your domain
-5. Set up static and media file serving
-6. Run migrations and setup_initial_data
-7. Configure WSGI file
+---
 
-## Project Structure
+## Email setup (Google SMTP)
+
+Email is **optional**. Without it, password-reset emails are printed to the server's
+console — fine for development, useless in production.
+
+To use Gmail/Google Workspace:
+
+1. Enable 2-factor auth on the Google account.
+2. Create an **App Password** at https://myaccount.google.com/apppasswords.
+3. Set these in `.env`:
+   ```
+   EMAIL_HOST=smtp.gmail.com
+   EMAIL_PORT=587
+   EMAIL_USE_TLS=1
+   EMAIL_HOST_USER=you@gmail.com
+   EMAIL_HOST_PASSWORD=the-16-char-app-password
+   DEFAULT_FROM_EMAIL=Asset Distribution <you@gmail.com>
+   ```
+4. Restart the server.
+
+When `EMAIL_HOST_PASSWORD` is empty the app silently falls back to the console
+backend, so the rest of the system keeps working.
+
+If a user's email isn't deliverable they can ask the admin to use **Reset PW** in
+the user list and hand the temporary password over in person.
+
+---
+
+## Environment variables
+
+See [`.env.example`](.env.example) for the full list. The important ones:
+
+| Variable | Purpose |
+|----------|---------|
+| `DJANGO_SECRET_KEY` | Required. Generate with `get_random_secret_key()`. |
+| `DJANGO_DEBUG` | `1` for development, `0` for production. |
+| `DJANGO_ALLOWED_HOSTS` | Comma-separated. Required when `DEBUG=0`. |
+| `SIGNUP_INVITE_CODE` | The shared code people enter on the signup page. Default `reviresco`. |
+| `ASSET_ADMIN_USERNAME` / `_PASSWORD` / `_EMAIL` / `_BRANCH` | Optional. If set, `setup_initial_data` creates this superuser with a branch profile. |
+| `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | Google SMTP credentials. Leave blank to use the console backend. |
+| `DEFAULT_FROM_EMAIL` | The "From" address on outgoing mail. |
+
+---
+
+## Project layout
 
 ```
-asset_distribution/
-├── manage.py
-├── requirements.txt
-├── asset_distribution/      # Django project settings
-├── core/                    # Main application
-│   ├── models.py           # Database models
-│   ├── views.py            # View logic
-│   ├── forms.py            # Form definitions
-│   ├── urls.py             # URL routing
-│   └── management/         # Custom management commands
-├── templates/               # HTML templates
-├── static/                  # CSS, JS, images
-└── media/                   # Uploaded photos
+asset_distribution/        Django settings, root URLconf
+core/                      The single app (models, views, forms, admin)
+  models.py                Branch, UserProfile, Category, Asset, AssetPhoto, Interest
+  views.py                 All views (auth + browsing + admin panel)
+  email.py                 Best-effort send helpers
+  management/commands/
+    setup_initial_data.py  Branches, categories, optional bootstrap superuser
+templates/
+  base.html, login.html, signup.html, dashboard.html, ...
+  admin/                   Admin panel templates
+  registration/            Django password-reset flow templates
+  email/                   Plain-text email bodies
 ```
 
-## License
+---
 
-Private use only.
+## Data model in one paragraph
+
+Each Django `User` has a `UserProfile` pointing at one `Branch`. `Asset`s belong to
+a `Category` and may be `assigned_to` a `User`. `Interest` links a user to an asset
+with a strict positive integer `position`; `(user, position)` and `(user, asset)`
+are both unique, so you can never have ties or duplicate interests. There is no
+turn-based state and no separate "family member" record — the admin simply assigns
+items directly using the **Assign** button.
+
+---
+
+## Development notes
+
+- Python 3.11+, Django 5.x, SQLite (swap `DATABASES` in `asset_distribution/settings.py`
+  for production).
+- After model changes: `python manage.py makemigrations core && python manage.py migrate`.
+- The drag-to-reorder UI uses [SortableJS](https://github.com/SortableJS/Sortable)
+  loaded from a CDN — no build step.
+- Reordering is wrapped in a database transaction that first shifts every position
+  to a negative offset, then assigns the final 1..N values, to avoid violating the
+  `(user, position)` unique constraint mid-update.

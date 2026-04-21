@@ -79,7 +79,7 @@
             {% else %}
             <span class="text-muted" style="font-size: 0.875rem;">
                 {% if asset.assigned_to %}
-                Claimed by {{ asset.assigned_to.name }}
+                Claimed by {{ asset.assigned_to.username }}
                 {% else %}
                 {{ asset.get_status_display }}
                 {% endif %}

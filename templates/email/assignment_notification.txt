@@ -1,0 +1,13 @@
+Hi {{ user.username }},
+
+An item from the family asset distribution has been assigned to you:
+
+  Name: {{ asset.name }}
+  Category: {{ asset.category.name }}
+{% if asset.description %}
+  Description: {{ asset.description }}
+{% endif %}
+
+Log in to view the full details and photos.
+
+— Asset Distribution

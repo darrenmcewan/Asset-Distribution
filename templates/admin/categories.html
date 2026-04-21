@@ -7,14 +7,11 @@
 
 <nav class="admin-nav">
     <a href="{% url 'admin_panel' %}">Dashboard</a>
+    <a href="{% url 'admin_users' %}">Users</a>
     <a href="{% url 'admin_assets' %}">Assets</a>
     <a href="{% url 'admin_categories' %}" class="active">Categories</a>
-    <a href="{% url 'admin_members' %}">Family Members</a>
-    <a href="{% url 'admin_interests' %}">View Interests</a>
-    <a href="{% url 'admin_distribution' %}">Distribution Control</a>
-    <a href="{% url 'admin_legacy' %}">Legacy Round</a>
+    <a href="{% url 'admin_interests' %}">Interests</a>
     <a href="{% url 'admin_reports' %}">Reports</a>
-    <a href="{% url 'admin_settings' %}">Settings</a>
 </nav>
 
 <div style="display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem;">

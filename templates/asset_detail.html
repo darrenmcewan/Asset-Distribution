@@ -63,7 +63,7 @@
         {% if asset.assigned_to %}
         <div class="card">
             <h4>Assigned To</h4>
-            <p><strong>{{ asset.assigned_to.name }}</strong> ({{ asset.assigned_to.branch.name }})</p>
+            <p><strong>{{ asset.assigned_to.username }}</strong>{% if asset.assigned_to.profile %} ({{ asset.assigned_to.profile.branch.name }}){% endif %}</p>
         </div>
         {% endif %}
         
@@ -75,9 +75,10 @@
                     <h4 style="margin: 0;">Express Interest</h4>
                     <p class="text-muted" style="margin: 0.25rem 0 0 0; font-size: 0.875rem;">
                         {% if interest %}
-                        You're interested in this item (Rank: {{ interest.ranking }})
+                        You're interested in this item (Position #{{ interest.position }} on your list).
+                        Reorder priorities on <a href="{% url 'my_interests' %}">My Interests</a>.
                         {% else %}
-                        Click to add this to your wishlist
+                        Click to add this to the bottom of your wishlist
                         {% endif %}
                     </p>
                 </div>
@@ -91,21 +92,6 @@
                     {% endif %}
                 </button>
             </div>
-            
-            {% if interest %}
-            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border);">
-                <form method="post" action="{% url 'update_ranking' interest.id %}" id="rankForm">
-                    {% csrf_token %}
-                    <div class="flex items-center gap-2">
-                        <label for="ranking">Your Ranking:</label>
-                        <input type="number" name="ranking" id="ranking" value="{{ interest.ranking }}" 
-                               min="1" class="form-input" style="width: 80px;">
-                        <button type="submit" class="btn btn-sm btn-secondary">Update</button>
-                        <span class="text-muted" style="font-size: 0.875rem;">(Lower = Higher Priority)</span>
-                    </div>
-                </form>
-            </div>
-            {% endif %}
         </div>
         {% endif %}
     </div>

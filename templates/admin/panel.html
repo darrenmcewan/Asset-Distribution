@@ -1,93 +1,43 @@
 {% extends 'base.html' %}
-
-{% block title %}Admin Panel - Asset Distribution{% endblock %}
-
+{% block title %}Admin Panel{% endblock %}
 {% block content %}
 <h1>Admin Panel</h1>
-<p class="text-light mb-3">Manage assets, distribution, and system settings.</p>
-
-<!-- Admin Navigation -->
 <nav class="admin-nav">
     <a href="{% url 'admin_panel' %}" class="active">Dashboard</a>
+    <a href="{% url 'admin_users' %}">Users</a>
     <a href="{% url 'admin_assets' %}">Assets</a>
     <a href="{% url 'admin_categories' %}">Categories</a>
-    <a href="{% url 'admin_members' %}">Family Members</a>
-    <a href="{% url 'admin_interests' %}">View Interests</a>
-    <a href="{% url 'admin_distribution' %}">Distribution Control</a>
-    <a href="{% url 'admin_legacy' %}">Legacy Round</a>
+    <a href="{% url 'admin_interests' %}">Interests</a>
     <a href="{% url 'admin_reports' %}">Reports</a>
-    <a href="{% url 'admin_settings' %}">Settings</a>
 </nav>
 
-<!-- Stats Grid -->
 <div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-value">{{ stats.total_assets }}</div>
-        <div class="stat-label">Total Assets</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value">{{ stats.available_assets }}</div>
-        <div class="stat-label">Available</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value">{{ stats.claimed_assets }}</div>
-        <div class="stat-label">Claimed</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value">{{ stats.total_interests }}</div>
-        <div class="stat-label">Total Interests</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value">{{ stats.legacy_submissions }}</div>
-        <div class="stat-label">Legacy Submissions</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value">{{ stats.total_members }}</div>
-        <div class="stat-label">Family Members</div>
-    </div>
+    <div class="stat-card"><div class="stat-value">{{ stats.total_assets }}</div><div class="stat-label">Total Assets</div></div>
+    <div class="stat-card"><div class="stat-value">{{ stats.available_assets }}</div><div class="stat-label">Available</div></div>
+    <div class="stat-card"><div class="stat-value">{{ stats.claimed_assets }}</div><div class="stat-label">Claimed</div></div>
+    <div class="stat-card"><div class="stat-value">{{ stats.total_interests }}</div><div class="stat-label">Total Interests</div></div>
+    <div class="stat-card"><div class="stat-value">{{ stats.total_users }}</div><div class="stat-label">Users</div></div>
 </div>
 
-<!-- Current State -->
 <div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Current Distribution State</h3>
-        <a href="{% url 'admin_distribution' %}" class="btn btn-sm btn-primary">Manage</a>
-    </div>
+    <div class="card-header"><h3 class="card-title">Distribution by Branch</h3></div>
     <table class="table">
-        <tr>
-            <th style="width: 200px;">Current Phase</th>
-            <td>
-                <span class="badge badge-{% if state.current_phase == 'pre_distribution' %}available{% elif state.current_phase == 'legacy_round' %}sold{% elif state.current_phase == 'category_distribution' %}claimed{% else %}donated{% endif %}">
-                    {{ state.get_current_phase_display }}
-                </span>
-            </td>
-        </tr>
-        {% if state.current_category %}
-        <tr>
-            <th>Current Category</th>
-            <td>{{ state.current_category.name }}</td>
-        </tr>
-        {% endif %}
-        {% if state.branch_order %}
-        <tr>
-            <th>Branch Order</th>
-            <td>{{ state.branch_order|join:" → " }}</td>
-        </tr>
-        {% endif %}
+        <thead><tr><th>Branch</th><th>Items Assigned</th></tr></thead>
+        <tbody>
+            {% for row in branch_stats %}
+            <tr><td><strong>{{ row.branch.name }}</strong></td><td>{{ row.count }}</td></tr>
+            {% endfor %}
+        </tbody>
     </table>
 </div>
 
-<!-- Quick Actions -->
 <div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Quick Actions</h3>
-    </div>
+    <div class="card-header"><h3 class="card-title">Quick Actions</h3></div>
     <div class="flex flex-wrap gap-2">
-        <a href="{% url 'admin_add_asset' %}" class="btn btn-success">+ Add New Asset</a>
-        <a href="{% url 'admin_distribution' %}" class="btn btn-primary">Manage Distribution</a>
-        <a href="{% url 'admin_interests' %}" class="btn btn-secondary">View All Interests</a>
-        <a href="{% url 'admin_export_csv' %}" class="btn btn-secondary">Export CSV Report</a>
+        <a href="{% url 'admin_add_asset' %}" class="btn btn-success">+ Add Asset</a>
+        <a href="{% url 'admin_users' %}" class="btn btn-primary">Manage Users</a>
+        <a href="{% url 'admin_interests' %}" class="btn btn-secondary">View Interests</a>
+        <a href="{% url 'admin_export_csv' %}" class="btn btn-secondary">Export CSV</a>
     </div>
 </div>
-
 {% endblock %}
