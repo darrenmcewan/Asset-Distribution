@@ -11,34 +11,17 @@
     <div class="login-container">
         <div class="login-box">
             <h1 class="login-title">Asset Distribution</h1>
-            <p class="login-subtitle">Enter the family password to continue</p>
-            
-            {% if messages %}
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-            {% endfor %}
-            {% endif %}
-            
+            <p class="login-subtitle">Sign in to your account</p>
+            {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}{% endif %}
+            {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors.0 }}</div>{% endif %}
             <form method="post" action="{% url 'login' %}">
                 {% csrf_token %}
-                <div class="form-group">
-                    <label for="id_password" class="form-label">Family Password</label>
-                    {{ form.password }}
-                    {% if form.password.errors %}
-                    <div class="form-error">{{ form.password.errors.0 }}</div>
-                    {% endif %}
-                </div>
-                
-                <button type="submit" class="btn btn-primary btn-block btn-lg">
-                    Continue
-                </button>
+                <div class="form-group"><label for="id_username" class="form-label">Username</label>{{ form.username }}</div>
+                <div class="form-group"><label for="id_password" class="form-label">Password</label>{{ form.password }}</div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg">Log In</button>
             </form>
-            
-            <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--color-border);">
-                <a href="{% url 'admin_login' %}" class="text-muted">Admin Login</a>
-            </div>
+            <div style="text-align: center; margin-top: 1rem;"><a href="{% url 'password_reset' %}" class="text-muted">Forgot password?</a></div>
+            <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--color-border);">Don't have an account? <a href="{% url 'signup' %}">Sign up</a></div>
         </div>
     </div>
 </body>

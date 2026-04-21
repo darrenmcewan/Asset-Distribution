@@ -8,14 +8,11 @@
 <!-- Admin Navigation -->
 <nav class="admin-nav">
     <a href="{% url 'admin_panel' %}">Dashboard</a>
+    <a href="{% url 'admin_users' %}">Users</a>
     <a href="{% url 'admin_assets' %}" class="active">Assets</a>
     <a href="{% url 'admin_categories' %}">Categories</a>
-    <a href="{% url 'admin_members' %}">Family Members</a>
-    <a href="{% url 'admin_interests' %}">View Interests</a>
-    <a href="{% url 'admin_distribution' %}">Distribution Control</a>
-    <a href="{% url 'admin_legacy' %}">Legacy Round</a>
+    <a href="{% url 'admin_interests' %}">Interests</a>
     <a href="{% url 'admin_reports' %}">Reports</a>
-    <a href="{% url 'admin_settings' %}">Settings</a>
 </nav>
 
 <div class="flex justify-between items-center mb-3">
@@ -87,7 +84,7 @@
                     </td>
                     <td>
                         {% if asset.assigned_to %}
-                        {{ asset.assigned_to.name }}
+                        {{ asset.assigned_to.username }}
                         {% else %}
                         <span class="text-muted">-</span>
                         {% endif %}
@@ -146,12 +143,12 @@
             <input type="hidden" name="asset_id" id="assignAssetId">
             <div class="form-group">
                 <label class="form-label">Assign to:</label>
-                <select name="member_id" class="form-select" required>
-                    <option value="">Select family member...</option>
+                <select name="user_id" class="form-select" required>
+                    <option value="">Select user...</option>
                     {% for branch in branches %}
                     <optgroup label="{{ branch.name }}">
-                        {% for member in branch.members.all %}
-                        <option value="{{ member.id }}">{{ member.name }}</option>
+                        {% for profile in branch.userprofile_set.all %}
+                        <option value="{{ profile.user.id }}">{{ profile.user.username }}</option>
                         {% endfor %}
                     </optgroup>
                     {% endfor %}

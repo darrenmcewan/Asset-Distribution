@@ -1,92 +1,58 @@
 {% extends 'base.html' %}
-
-{% block title %}View Interests - Admin{% endblock %}
-
+{% block title %}Interests - Admin{% endblock %}
 {% block content %}
 <h1>View Interests</h1>
-
 <nav class="admin-nav">
     <a href="{% url 'admin_panel' %}">Dashboard</a>
+    <a href="{% url 'admin_users' %}">Users</a>
     <a href="{% url 'admin_assets' %}">Assets</a>
     <a href="{% url 'admin_categories' %}">Categories</a>
-    <a href="{% url 'admin_members' %}">Family Members</a>
-    <a href="{% url 'admin_interests' %}" class="active">View Interests</a>
-    <a href="{% url 'admin_distribution' %}">Distribution Control</a>
-    <a href="{% url 'admin_legacy' %}">Legacy Round</a>
+    <a href="{% url 'admin_interests' %}" class="active">Interests</a>
     <a href="{% url 'admin_reports' %}">Reports</a>
-    <a href="{% url 'admin_settings' %}">Settings</a>
 </nav>
 
-<!-- View Toggle -->
 <div class="flex gap-2 mb-3">
     <a href="?view=item" class="btn {% if view_by == 'item' %}btn-primary{% else %}btn-secondary{% endif %}">By Item</a>
     <a href="?view=person" class="btn {% if view_by == 'person' %}btn-primary{% else %}btn-secondary{% endif %}">By Person</a>
 </div>
 
 {% if view_by == 'item' %}
-<!-- View by Item -->
 <div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Items with Interest ({{ assets|length }})</h3>
-    </div>
+    <div class="card-header"><h3 class="card-title">Items with Interest ({{ assets|length }})</h3></div>
     {% if assets %}
     <table class="table">
-        <thead>
-            <tr>
-                <th>Item</th>
-                <th>Category</th>
-                <th># Interested</th>
-                <th>Who Wants It</th>
-            </tr>
-        </thead>
+        <thead><tr><th>Item</th><th>Category</th><th># Interested</th><th>Who Wants It</th></tr></thead>
         <tbody>
             {% for asset in assets %}
             <tr>
-                <td>
-                    <a href="{% url 'asset_detail' asset.id %}">{{ asset.name }}</a>
-                </td>
+                <td><a href="{% url 'asset_detail' asset.id %}">{{ asset.name }}</a></td>
                 <td>{{ asset.category.name }}</td>
-                <td>
-                    <strong>{{ asset.interest_count }}</strong>
-                </td>
+                <td><strong>{{ asset.interest_count }}</strong></td>
                 <td>
                     {% for interest in asset.interests.all %}
-                    <span class="badge badge-available" style="margin: 2px;">
-                        {{ interest.family_member.name }} (Rank: {{ interest.ranking }})
-                    </span>
+                    <span class="badge badge-available" style="margin: 2px;">{{ interest.user.username }} (#{{ interest.position }})</span>
                     {% endfor %}
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    {% else %}
-    <p class="text-muted" style="padding: 1rem;">No items have any interests yet.</p>
-    {% endif %}
+    {% else %}<p class="text-muted" style="padding: 1rem;">No items have any interests yet.</p>{% endif %}
 </div>
-
 {% else %}
-<!-- View by Person -->
-{% for member in members %}
-{% if member.interest_count > 0 %}
+{% for u in users %}
+{% if u.interest_count > 0 %}
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">{{ member.name }} ({{ member.branch.code }})</h3>
-        <span class="badge badge-available">{{ member.interest_count }} items</span>
+        <h3 class="card-title">{{ u.username }}{% if u.profile %} <span class="text-muted">({{ u.profile.branch.name }})</span>{% endif %}</h3>
+        <span class="badge badge-available">{{ u.interest_count }} items</span>
     </div>
     <table class="table">
-        <thead>
-            <tr>
-                <th>Rank</th>
-                <th>Item</th>
-                <th>Category</th>
-                <th>Status</th>
-            </tr>
-        </thead>
+        <thead><tr><th>#</th><th>Item</th><th>Category</th><th>Status</th></tr></thead>
         <tbody>
-            {% for interest in member.interests.all %}
+            {% for interest in u.interests.all %}
             <tr>
-                <td><strong>{{ interest.ranking }}</strong></td>
+                <td><strong>{{ interest.position }}</strong></td>
                 <td><a href="{% url 'asset_detail' interest.asset.id %}">{{ interest.asset.name }}</a></td>
                 <td>{{ interest.asset.category.name }}</td>
                 <td><span class="badge badge-{{ interest.asset.status }}">{{ interest.asset.get_status_display }}</span></td>
@@ -98,5 +64,4 @@
 {% endif %}
 {% endfor %}
 {% endif %}
-
 {% endblock %}

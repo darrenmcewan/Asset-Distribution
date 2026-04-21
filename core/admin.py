@@ -1,12 +1,10 @@
 """
-Django admin configuration for the Asset Distribution System.
+Django admin configuration.
 """
 
 from django.contrib import admin
-from .models import (
-    Branch, FamilyMember, Category, Asset, AssetPhoto,
-    Interest, LegacySubmission, DistributionState, TurnOrder, SystemSettings
-)
+
+from .models import Asset, AssetPhoto, Branch, Category, Interest, UserProfile
 
 
 @admin.register(Branch)
@@ -15,11 +13,11 @@ class BranchAdmin(admin.ModelAdmin):
     ordering = ['display_order']
 
 
-@admin.register(FamilyMember)
-class FamilyMemberAdmin(admin.ModelAdmin):
-    list_display = ['name', 'branch', 'is_father', 'can_upload']
-    list_filter = ['branch', 'is_father', 'can_upload']
-    ordering = ['branch__display_order', '-is_father', 'name']
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ['user', 'branch']
+    list_filter = ['branch']
+    search_fields = ['user__username', 'user__email']
 
 
 @admin.register(Category)
@@ -43,28 +41,6 @@ class AssetAdmin(admin.ModelAdmin):
 
 @admin.register(Interest)
 class InterestAdmin(admin.ModelAdmin):
-    list_display = ['family_member', 'asset', 'ranking', 'created_at']
-    list_filter = ['family_member', 'asset__category']
-    ordering = ['family_member', 'ranking']
-
-
-@admin.register(LegacySubmission)
-class LegacySubmissionAdmin(admin.ModelAdmin):
-    list_display = ['family_member', 'choice_1', 'choice_2', 'choice_3', 'submitted_at']
-
-
-@admin.register(DistributionState)
-class DistributionStateAdmin(admin.ModelAdmin):
-    list_display = ['current_phase', 'current_category', 'turn_index']
-
-
-@admin.register(TurnOrder)
-class TurnOrderAdmin(admin.ModelAdmin):
-    list_display = ['category', 'sequence', 'family_member', 'completed', 'passed']
-    list_filter = ['category', 'completed', 'passed']
-    ordering = ['category', 'sequence']
-
-
-@admin.register(SystemSettings)
-class SystemSettingsAdmin(admin.ModelAdmin):
-    list_display = ['key', 'value']
+    list_display = ['user', 'asset', 'position', 'created_at']
+    list_filter = ['user', 'asset__category']
+    ordering = ['user', 'position']
