@@ -11,6 +11,7 @@
 <body>
     <div class="page-wrapper">
         {% if user.is_authenticated %}
+        {% if user.is_authenticated %}
         <header class="header">
             <div class="container">
                 <div class="header-inner">
@@ -18,12 +19,14 @@
                     <nav class="nav">
                         <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Dashboard</a>
                         <a href="{% url 'browse_assets' %}" {% if request.resolver_match.url_name == 'browse_assets' %}class="active"{% endif %}>Browse</a>
+                        <a href="{% url 'browse_assets' %}" {% if request.resolver_match.url_name == 'browse_assets' %}class="active"{% endif %}>Browse</a>
                         <a href="{% url 'my_interests' %}" {% if request.resolver_match.url_name == 'my_interests' %}class="active"{% endif %}>My Interests</a>
                         <a href="{% url 'my_items' %}" {% if request.resolver_match.url_name == 'my_items' %}class="active"{% endif %}>My Items</a>
-                        <a href="{% url 'upload_asset' %}" {% if request.resolver_match.url_name == 'upload_asset' %}class="active"{% endif %}>Upload</a>
+                        {% if user.is_staff %}<a href="{% url 'upload_asset' %}" {% if request.resolver_match.url_name == 'upload_asset' %}class="active"{% endif %}>Upload</a>{% endif %}
                         {% if user.is_staff %}<a href="{% url 'admin_panel' %}" class="btn btn-sm btn-primary">Admin</a>{% endif %}
                     </nav>
                     <div class="user-info">
+                        <span><strong class="user-name">{{ user.username }}</strong>{% if user_branch %} <span class="text-muted">({{ user_branch.name }})</span>{% endif %}</span>
                         <span><strong class="user-name">{{ user.username }}</strong>{% if user_branch %} <span class="text-muted">({{ user_branch.name }})</span>{% endif %}</span>
                         <a href="{% url 'logout' %}" class="btn btn-sm btn-secondary">Logout</a>
                     </div>
@@ -34,10 +37,12 @@
         <main class="main-content">
             <div class="container">
                 {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}{% endif %}
+                {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}{% endif %}
                 {% block content %}{% endblock %}
             </div>
         </main>
         <footer style="padding: 1rem 0; text-align: center; color: var(--color-text-muted); border-top: 1px solid var(--color-border);">
+            <div class="container"><p>&copy; 2026 Family Asset Distribution System</p></div>
             <div class="container"><p>&copy; 2026 Family Asset Distribution System</p></div>
         </footer>
     </div>
