@@ -36,8 +36,11 @@
             <h1 style="margin: 0;">{{ asset.name }}</h1>
             <span class="badge badge-{{ asset.status }}">{{ asset.get_status_display }}</span>
         </div>
-        
-        <p class="text-light mb-3">{{ asset.category.name }}</p>
+
+        <p class="text-light mb-3">
+            {{ asset.category.name }}
+            <span class="text-muted" style="font-size: 0.875rem; margin-left: 0.5rem;">{{ asset.serial_number }}</span>
+        </p>
         
         {% if asset.description %}
         <div class="card">
