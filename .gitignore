@@ -34,3 +34,5 @@ Thumbs.db
 # Secrets
 .env
 *.pem
+openspec/
+.github/
