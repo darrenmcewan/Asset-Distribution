@@ -337,6 +337,7 @@ def admin_assets_view(request):
     return render(request, 'admin/assets.html', {
         'assets': paginator.get_page(request.GET.get('page', 1)),
         'categories': Category.objects.all(),
+        'branches': Branch.objects.prefetch_related('users__user').all(),
         'selected_category': category_id,
         'selected_status': status,
         'search': search,
