@@ -62,7 +62,10 @@
             <h3 class="asset-card-title">
                 <a href="{% url 'asset_detail' asset.id %}" style="color: inherit;">{{ asset.name }}</a>
             </h3>
-            <p class="asset-card-category">{{ asset.category.name }}</p>
+            <p class="asset-card-category">
+                {{ asset.category.name }}
+                <span class="text-muted" style="font-size: 0.75rem; margin-left: 0.25rem;">{{ asset.serial_number }}</span>
+            </p>
             <span class="badge badge-{{ asset.status }}">{{ asset.get_status_display }}</span>
         </div>
         <div class="asset-card-footer">

@@ -97,6 +97,17 @@ class Asset(models.Model):
     def get_interested_users(self):
         return Interest.objects.filter(asset=self).select_related('user').order_by('position')
 
+    @property
+    def serial_number(self):
+        """Human-friendly serial number derived from the auto-increment primary key.
+
+        Format: ``JBM-001``, ``JBM-002``, ... Pads to 3 digits and grows naturally
+        beyond 999 (e.g. ``JBM-1000``).
+        """
+        if self.pk is None:
+            return ''
+        return f'JBM-{self.pk:03d}'
+
 
 class AssetPhoto(models.Model):
     """Photo attached to an asset."""
