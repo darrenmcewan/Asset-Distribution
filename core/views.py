@@ -334,10 +334,25 @@ def admin_assets_view(request):
         assets = assets.filter(Q(name__icontains=search) | Q(description__icontains=search))
 
     paginator = Paginator(assets, 20)
+    page = paginator.get_page(request.GET.get('page', 1))
+
+    # Build per-asset map of interested users for the assign modal
+    page_asset_ids = [a.id for a in page]
+    interests = Interest.objects.filter(asset_id__in=page_asset_ids).select_related('user__profile__branch').order_by('position')
+    asset_interests = {}
+    for interest in interests:
+        asset_interests.setdefault(interest.asset_id, []).append({
+            'user_id': interest.user_id,
+            'username': interest.user.username,
+            'branch': interest.user.profile.branch.name if hasattr(interest.user, 'profile') else '',
+            'position': interest.position,
+        })
+
     return render(request, 'admin/assets.html', {
-        'assets': paginator.get_page(request.GET.get('page', 1)),
+        'assets': page,
         'categories': Category.objects.all(),
         'branches': Branch.objects.prefetch_related('users__user').all(),
+        'asset_interests_json': json.dumps(asset_interests),
         'selected_category': category_id,
         'selected_status': status,
         'search': search,

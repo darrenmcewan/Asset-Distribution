@@ -142,20 +142,14 @@
             {% csrf_token %}
             <input type="hidden" name="asset_id" id="assignAssetId">
             <div class="form-group">
-                <label class="form-label">Assign to:</label>
-                <select name="user_id" class="form-select" required>
+                <label class="form-label">Assign to (interested users):</label>
+                <select name="user_id" id="assignUserSelect" class="form-select" required>
                     <option value="">Select user...</option>
-                    {% for branch in branches %}
-                    <optgroup label="{{ branch.name }}">
-                        {% for profile in branch.userprofile_set.all %}
-                        <option value="{{ profile.user.id }}">{{ profile.user.username }}</option>
-                        {% endfor %}
-                    </optgroup>
-                    {% endfor %}
                 </select>
+                <p id="noInterestMsg" class="text-muted" style="display: none; font-size: 0.875rem; margin-top: 0.5rem;">No users have expressed interest in this item.</p>
             </div>
             <div class="flex gap-2">
-                <button type="submit" class="btn btn-primary">Assign</button>
+                <button type="submit" class="btn btn-primary" id="assignSubmitBtn">Assign</button>
                 <button type="button" class="btn btn-secondary" onclick="hideAssignModal()">Cancel</button>
             </div>
         </form>
@@ -166,9 +160,36 @@
 
 {% block extra_js %}
 <script>
+var assetInterests = {{ asset_interests_json|safe }};
+
 function showAssignModal(assetId, assetName) {
     document.getElementById('assignAssetId').value = assetId;
     document.getElementById('assignModalTitle').textContent = 'Assign: ' + assetName;
+
+    var select = document.getElementById('assignUserSelect');
+    var noMsg = document.getElementById('noInterestMsg');
+    var submitBtn = document.getElementById('assignSubmitBtn');
+
+    // Clear existing options
+    select.innerHTML = '<option value="">Select user...</option>';
+
+    var interested = assetInterests[assetId] || [];
+    if (interested.length > 0) {
+        interested.forEach(function(item) {
+            var opt = document.createElement('option');
+            opt.value = item.user_id;
+            opt.textContent = item.username + ' (' + item.branch + ') — priority #' + item.position;
+            select.appendChild(opt);
+        });
+        select.style.display = '';
+        noMsg.style.display = 'none';
+        submitBtn.disabled = false;
+    } else {
+        select.style.display = 'none';
+        noMsg.style.display = 'block';
+        submitBtn.disabled = true;
+    }
+
     document.getElementById('assignModal').style.display = 'flex';
 }
 
