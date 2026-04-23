@@ -2,9 +2,18 @@
 Database models for the Asset Distribution System.
 """
 
+import logging
+from io import BytesIO
+
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models
 from django.db.models import Max
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 
 class Branch(models.Model):
@@ -111,6 +120,9 @@ class Asset(models.Model):
 
 class AssetPhoto(models.Model):
     """Photo attached to an asset."""
+    MAX_DIMENSION = 1200
+    JPEG_QUALITY = 75
+
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='photos')
     image = models.ImageField(upload_to='assets/')
     upload_order = models.IntegerField(default=0)
@@ -121,6 +133,44 @@ class AssetPhoto(models.Model):
 
     def __str__(self):
         return f"Photo for {self.asset.name}"
+
+    def save(self, *args, **kwargs):
+        if self.image and hasattr(self.image, 'read'):
+            try:
+                img = Image.open(self.image)
+
+                # Strip EXIF by copying pixel data to a clean image
+                clean = Image.new(img.mode, img.size)
+                clean.putdata(list(img.getdata()))
+
+                # Convert to RGB (handles PNG/RGBA transparency)
+                clean = clean.convert('RGB')
+
+                # Resize to fit within MAX_DIMENSION, preserving aspect ratio
+                clean.thumbnail((self.MAX_DIMENSION, self.MAX_DIMENSION))
+
+                buffer = BytesIO()
+                clean.save(buffer, format='JPEG', quality=self.JPEG_QUALITY, optimize=True)
+                buffer.seek(0)
+
+                name = self.image.name.rsplit('.', 1)[0] + '.jpg'
+                self.image = InMemoryUploadedFile(
+                    buffer, 'image', name, 'image/jpeg', buffer.tell(), None,
+                )
+            except Exception:
+                logger.exception('Failed to process image, saving original')
+
+        super().save(*args, **kwargs)
+
+
+@receiver(post_delete, sender=AssetPhoto)
+def delete_photo_file(sender, instance, **kwargs):
+    """Remove the image file from disk when the AssetPhoto record is deleted."""
+    if instance.image:
+        try:
+            instance.image.delete(save=False)
+        except Exception:
+            logger.exception('Failed to delete file for AssetPhoto %s', instance.pk)
 
 
 class Interest(models.Model):
