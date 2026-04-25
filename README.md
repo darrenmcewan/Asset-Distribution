@@ -67,7 +67,6 @@ Open http://localhost:8000/ — you'll be sent to the login page.
 1. A prospective user visits `/signup/`.
 2. They pick a username, email, password, and **branch** (Lynn / Richard / Rob).
 3. They enter the **invite code** — the value of `SIGNUP_INVITE_CODE` from `.env`
-   (default `reviresco`).
 4. The account is created immediately. No admin approval step.
 
 To rotate the invite code, just change `SIGNUP_INVITE_CODE` in `.env` and restart.
