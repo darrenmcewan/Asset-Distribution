@@ -271,9 +271,9 @@ def my_items_view(request):
     return render(request, 'my_items.html', {'items': items})
 
 
-@login_required
+@admin_required
 def upload_asset_view(request):
-    """Anyone logged in can upload an asset (admin can deactivate accounts to prevent abuse)."""
+    """Admin-only asset upload. Non-staff users are redirected to login."""
     if request.method == 'POST':
         form = AssetForm(request.POST)
         if form.is_valid():

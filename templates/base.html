@@ -21,7 +21,7 @@
                         <a href="{% url 'browse_assets' %}" {% if request.resolver_match.url_name == 'browse_assets' %}class="active"{% endif %}>Browse</a>
                         <a href="{% url 'my_interests' %}" {% if request.resolver_match.url_name == 'my_interests' %}class="active"{% endif %}>My Interests</a>
                         <a href="{% url 'my_items' %}" {% if request.resolver_match.url_name == 'my_items' %}class="active"{% endif %}>My Items</a>
-                        <a href="{% url 'upload_asset' %}" {% if request.resolver_match.url_name == 'upload_asset' %}class="active"{% endif %}>Upload</a>
+                        {% if user.is_staff %}<a href="{% url 'upload_asset' %}" {% if request.resolver_match.url_name == 'upload_asset' %}class="active"{% endif %}>Upload</a>{% endif %}
                         {% if user.is_staff %}<a href="{% url 'admin_panel' %}" class="btn btn-sm btn-primary">Admin</a>{% endif %}
                     </nav>
                     <div class="user-info">
