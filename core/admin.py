@@ -4,7 +4,16 @@ Django admin configuration.
 
 from django.contrib import admin
 
-from .models import Asset, AssetPhoto, Branch, Category, Interest, UserProfile
+from .models import (
+    Asset,
+    AssetComment,
+    AssetPhoto,
+    AssignmentEvent,
+    Branch,
+    Category,
+    Interest,
+    UserProfile,
+)
 
 
 @admin.register(Branch)
@@ -44,3 +53,19 @@ class InterestAdmin(admin.ModelAdmin):
     list_display = ['user', 'asset', 'position', 'created_at']
     list_filter = ['user', 'asset__category']
     ordering = ['user', 'position']
+
+
+@admin.register(AssignmentEvent)
+class AssignmentEventAdmin(admin.ModelAdmin):
+    list_display = ['created_at', 'event_type', 'asset', 'actor', 'from_user', 'to_user', 'from_status', 'to_status']
+    list_filter = ['event_type']
+    search_fields = ['asset__name', 'actor__username', 'to_user__username', 'from_user__username']
+    ordering = ['-created_at']
+    readonly_fields = ['created_at']
+
+
+@admin.register(AssetComment)
+class AssetCommentAdmin(admin.ModelAdmin):
+    list_display = ['created_at', 'asset', 'author', 'body']
+    search_fields = ['asset__name', 'author__username', 'body']
+    ordering = ['-created_at']

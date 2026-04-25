@@ -16,6 +16,10 @@
             <div class="container">
                 <div class="header-inner">
                     <a href="{% url 'dashboard' %}" class="logo">Asset Distribution</a>
+                    <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
+                    <label for="nav-toggle" class="nav-hamburger" aria-hidden="true">
+                        <span></span><span></span><span></span>
+                    </label>
                     <nav class="nav">
                         <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Dashboard</a>
                         <a href="{% url 'browse_assets' %}" {% if request.resolver_match.url_name == 'browse_assets' %}class="active"{% endif %}>Browse</a>

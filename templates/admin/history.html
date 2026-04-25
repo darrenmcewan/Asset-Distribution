@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}History - Admin{% endblock %}
+{% block content %}
+<h1>Assignment History</h1>
+<nav class="admin-nav">
+    <a href="{% url 'admin_panel' %}">Dashboard</a>
+    <a href="{% url 'admin_users' %}">Users</a>
+    <a href="{% url 'admin_assets' %}">Assets</a>
+    <a href="{% url 'admin_categories' %}">Categories</a>
+    <a href="{% url 'admin_interests' %}">Interests</a>
+    <a href="{% url 'admin_history' %}" class="active">History</a>
+    <a href="{% url 'admin_reports' %}">Reports</a>
+</nav>
+
+<form method="get" class="filter-bar">
+    <div class="filter-group">
+        <label for="asset">Asset:</label>
+        <select name="asset" id="asset" class="form-select" onchange="this.form.submit()">
+            <option value="">All assets</option>
+            {% for a in assets %}
+            <option value="{{ a.id }}" {% if selected_asset == a.id|stringformat:"s" %}selected{% endif %}>{{ a.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label for="user">User:</label>
+        <select name="user" id="user" class="form-select" onchange="this.form.submit()">
+            <option value="">All users</option>
+            {% for u in users %}
+            <option value="{{ u.id }}" {% if selected_user == u.id|stringformat:"s" %}selected{% endif %}>{{ u.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% if selected_asset or selected_user %}
+    <a href="{% url 'admin_history' %}" class="btn btn-sm btn-secondary">Clear</a>
+    {% endif %}
+</form>
+
+<div class="card">
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>When</th><th>Event</th><th>Asset</th><th>From</th><th>To</th><th>Status</th><th>Actor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                <tr>
+                    <td>{{ event.created_at|date:"M j, Y g:i a" }}</td>
+                    <td><span class="badge">{{ event.get_event_type_display }}</span></td>
+                    <td>
+                        {% if event.asset %}
+                        <a href="{% url 'asset_detail' event.asset.id %}">{{ event.asset.name }}</a>
+                        {% else %}<span class="text-muted">(deleted)</span>{% endif %}
+                    </td>
+                    <td>{{ event.from_user.username|default:"-" }}</td>
+                    <td>{{ event.to_user.username|default:"-" }}</td>
+                    <td>{{ event.from_status|default:"-" }} → {{ event.to_status|default:"-" }}</td>
+                    <td>{{ event.actor.username|default:"system" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted">No events recorded yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if events.has_other_pages %}
+<div class="pagination">
+    {% if events.has_previous %}<a href="?page={{ events.previous_page_number }}{% if selected_asset %}&asset={{ selected_asset }}{% endif %}{% if selected_user %}&user={{ selected_user }}{% endif %}">← Previous</a>{% endif %}
+    <span class="current">Page {{ events.number }} of {{ events.paginator.num_pages }}</span>
+    {% if events.has_next %}<a href="?page={{ events.next_page_number }}{% if selected_asset %}&asset={{ selected_asset }}{% endif %}{% if selected_user %}&user={{ selected_user }}{% endif %}">Next →</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

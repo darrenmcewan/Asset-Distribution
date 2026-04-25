@@ -9,15 +9,19 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    'DJANGO_SECRET_KEY',
-    'django-insecure-change-this-in-production-abc123xyz789',
-)
+_INSECURE_DEFAULT_SECRET_KEY = 'django-insecure-change-this-in-production-abc123xyz789'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', _INSECURE_DEFAULT_SECRET_KEY)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = [h for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',') if h]
+
+if not DEBUG:
+    if SECRET_KEY == _INSECURE_DEFAULT_SECRET_KEY:
+        raise RuntimeError('Refusing to start in production: DJANGO_SECRET_KEY is unset or using insecure default.')
+    if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['*']:
+        raise RuntimeError('Refusing to start in production: DJANGO_ALLOWED_HOSTS must be set to a non-wildcard value.')
 
 # Auth
 LOGIN_URL = '/'
@@ -161,6 +165,11 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     X_FRAME_OPTIONS = 'DENY'
     SECURE_SSL_REDIRECT = False  # PythonAnywhere handles SSL at proxy level
+    # Trust the X-Forwarded-Proto header from the PA proxy so request.is_secure() works.
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# django-ratelimit: use the in-process cache backend (default).
+RATELIMIT_ENABLE = os.environ.get('RATELIMIT_ENABLE', '1') == '1'
 
 # CSRF trusted origins (required for Django 4.x behind a proxy)
 CSRF_TRUSTED_ORIGINS = os.environ.get(

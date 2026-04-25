@@ -5,8 +5,9 @@ Forms for the Asset Distribution System.
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
 
-from .models import Asset, Category, Branch, UserProfile
+from .models import Asset, AssetComment, Category, Branch, UserProfile
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -96,7 +97,7 @@ class SignupForm(UserCreationForm):
 class AdminPasswordResetForm(forms.Form):
     """Form for an admin to set a temporary password for a user."""
     new_password = forms.CharField(
-        min_length=4,
+        min_length=8,
         widget=forms.PasswordInput(attrs={'class': 'form-input', 'placeholder': 'New temporary password'}),
     )
     confirm_password = forms.CharField(
@@ -105,9 +106,15 @@ class AdminPasswordResetForm(forms.Form):
 
     def clean(self):
         cleaned = super().clean()
-        if cleaned.get('new_password') and cleaned.get('confirm_password'):
-            if cleaned['new_password'] != cleaned['confirm_password']:
+        new_password = cleaned.get('new_password')
+        confirm_password = cleaned.get('confirm_password')
+        if new_password and confirm_password:
+            if new_password != confirm_password:
                 raise forms.ValidationError('Passwords do not match.')
+            try:
+                validate_password(new_password)
+            except forms.ValidationError as exc:
+                self.add_error('new_password', exc)
         return cleaned
 
 
@@ -161,3 +168,25 @@ class CategoryForm(forms.ModelForm):
             'name': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Category name'}),
             'display_order': forms.NumberInput(attrs={'class': 'form-input', 'style': 'width: 80px;'}),
         }
+
+
+class CommentForm(forms.ModelForm):
+    """Plain-text comment on an asset."""
+    class Meta:
+        model = AssetComment
+        fields = ['body']
+        widgets = {
+            'body': forms.Textarea(attrs={
+                'class': 'form-textarea',
+                'rows': 3,
+                'placeholder': 'Share why this matters to you...',
+                'maxlength': 2000,
+            }),
+        }
+        labels = {'body': ''}
+
+    def clean_body(self):
+        body = (self.cleaned_data.get('body') or '').strip()
+        if not body:
+            raise forms.ValidationError('Comment cannot be empty.')
+        return body

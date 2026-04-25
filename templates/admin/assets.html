@@ -12,6 +12,7 @@
     <a href="{% url 'admin_assets' %}" class="active">Assets</a>
     <a href="{% url 'admin_categories' %}">Categories</a>
     <a href="{% url 'admin_interests' %}">Interests</a>
+    <a href="{% url 'admin_history' %}">History</a>
     <a href="{% url 'admin_reports' %}">Reports</a>
 </nav>
 
@@ -69,7 +70,7 @@
                     <td style="width: 60px;">
                         {% with asset.get_primary_photo as photo %}
                         {% if photo %}
-                        <img src="{{ photo.image.url }}" alt="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                        <img src="{{ photo.image.url }}" alt="" class="admin-thumb" style="width: 50px; height: 50px;">
                         {% else %}
                         <div style="width: 50px; height: 50px; background: var(--color-bg-light); border-radius: 4px;"></div>
                         {% endif %}

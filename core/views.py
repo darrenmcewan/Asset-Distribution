@@ -4,6 +4,8 @@ Views for the Asset Distribution System.
 
 import csv
 import json
+import mimetypes
+import os
 from datetime import timedelta
 
 from django.conf import settings
@@ -15,20 +17,38 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
-from django.http import HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+
+try:
+    from django_ratelimit.decorators import ratelimit
+except ImportError:  # pragma: no cover - optional dependency
+    def ratelimit(*args, **kwargs):
+        def decorator(view):
+            return view
+        return decorator
 
 from .email import send_assignment_notification
 from .forms import (
     AdminPasswordResetForm,
     AssetForm,
     CategoryForm,
+    CommentForm,
     SignupForm,
     StyledLoginForm,
 )
-from .models import Asset, AssetPhoto, Branch, Category, Interest, UserProfile
+from .models import (
+    Asset,
+    AssetComment,
+    AssetPhoto,
+    AssignmentEvent,
+    Branch,
+    Category,
+    Interest,
+    UserProfile,
+)
 
 
 # ============================================================================
@@ -61,6 +81,9 @@ def login_view(request):
     return render(request, 'login.html', {'form': form})
 
 
+login_view = ratelimit(key='ip', rate='5/15m', block=True, method='POST')(login_view)
+
+
 def signup_view(request):
     """Open signup gated by an invite code."""
     if request.user.is_authenticated:
@@ -79,6 +102,9 @@ def signup_view(request):
         form = SignupForm(expected_invite_code=expected_code)
 
     return render(request, 'signup.html', {'form': form})
+
+
+signup_view = ratelimit(key='ip', rate='5/15m', block=True, method='POST')(signup_view)
 
 
 def logout_view(request):
@@ -125,6 +151,8 @@ def dashboard_view(request):
         .filter(created_at__gt=cutoff, status='available')
         .exclude(created_by=user)
         .select_related('category')
+        .prefetch_related('photos')
+        .annotate(interest_count=Count('interests'))
         .order_by('-created_at')[:10]
     )
 
@@ -146,7 +174,7 @@ def browse_assets_view(request):
     search = (request.GET.get('search') or '').strip()
     status_filter = request.GET.get('status', 'available')
 
-    assets = Asset.objects.select_related('category', 'assigned_to').prefetch_related('photos')
+    assets = Asset.objects.select_related('category', 'assigned_to').prefetch_related('photos').annotate(interest_count=Count('interests'))
     if category_id:
         assets = assets.filter(category_id=category_id)
     if search:
@@ -178,11 +206,81 @@ def asset_detail_view(request, asset_id):
         pk=asset_id,
     )
     interest = Interest.objects.filter(user=request.user, asset=asset).first()
+
+    comments = list(
+        AssetComment.objects
+        .filter(asset=asset)
+        .select_related('author', 'author__profile', 'author__profile__branch')
+        .order_by('created_at')
+    )
+
+    # Build a per-asset alias map: first author -> 'A', second -> 'B', ...
+    alias_map = {}
+    for comment in comments:
+        if comment.author_id not in alias_map:
+            idx = len(alias_map)
+            alias_map[comment.author_id] = _alias_for_index(idx)
+    # Attach the alias to each comment for easy template rendering.
+    for comment in comments:
+        comment.alias = alias_map[comment.author_id]
+
+    events = []
+    if request.user.is_staff:
+        events = list(
+            AssignmentEvent.objects
+            .filter(asset=asset)
+            .select_related('actor', 'from_user', 'to_user')
+            .order_by('-created_at')
+        )
+
     return render(request, 'asset_detail.html', {
         'asset': asset,
         'interest': interest,
         'photos': asset.photos.all(),
+        'comments': comments,
+        'alias_map': alias_map,
+        'comment_form': CommentForm(),
+        'events': events,
     })
+
+
+def _alias_for_index(idx):
+    """Return 'A', 'B', ... 'Z', 'AA', 'AB', ... for the given 0-based index."""
+    label = ''
+    n = idx
+    while True:
+        label = chr(ord('A') + (n % 26)) + label
+        n = n // 26 - 1
+        if n < 0:
+            break
+    return label
+
+
+@login_required
+@require_POST
+def post_comment_view(request, asset_id):
+    asset = get_object_or_404(Asset, pk=asset_id)
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        AssetComment.objects.create(
+            asset=asset,
+            author=request.user,
+            body=form.cleaned_data['body'],
+        )
+        messages.success(request, 'Your comment has been posted.')
+    else:
+        messages.error(request, form.errors.get('body', ['Could not post comment.'])[0])
+    return redirect('asset_detail', asset_id=asset.id)
+
+
+@admin_required
+@require_POST
+def admin_delete_comment_view(request, comment_id):
+    comment = get_object_or_404(AssetComment, pk=comment_id)
+    asset_id = comment.asset_id
+    comment.delete()
+    messages.success(request, 'Comment deleted.')
+    return redirect('asset_detail', asset_id=asset_id)
 
 
 @login_required
@@ -479,9 +577,21 @@ def admin_direct_assign_view(request):
     asset = get_object_or_404(Asset, pk=asset_id)
     user = get_object_or_404(User, pk=user_id)
 
-    asset.status = 'claimed'
-    asset.assigned_to = user
-    asset.save()
+    with transaction.atomic():
+        prev_user = asset.assigned_to
+        prev_status = asset.status
+        asset.status = 'claimed'
+        asset.assigned_to = user
+        asset.save()
+        AssignmentEvent.objects.create(
+            asset=asset,
+            actor=request.user,
+            event_type='assign',
+            from_user=prev_user,
+            to_user=user,
+            from_status=prev_status,
+            to_status='claimed',
+        )
 
     send_assignment_notification(user, asset)
 
@@ -495,10 +605,23 @@ def admin_mark_status_view(request, asset_id):
     asset = get_object_or_404(Asset, pk=asset_id)
     status = request.POST.get('status')
     if status in ['sold', 'donated', 'available']:
-        if status == 'available':
-            asset.assigned_to = None
-        asset.status = status
-        asset.save()
+        with transaction.atomic():
+            prev_user = asset.assigned_to
+            prev_status = asset.status
+            if status == 'available':
+                asset.assigned_to = None
+            asset.status = status
+            asset.save()
+            event_type = 'unassign' if status == 'available' else 'status_change'
+            AssignmentEvent.objects.create(
+                asset=asset,
+                actor=request.user,
+                event_type=event_type,
+                from_user=prev_user,
+                to_user=asset.assigned_to,
+                from_status=prev_status,
+                to_status=status,
+            )
         messages.success(request, f'"{asset.name}" marked as {status}.')
     return redirect('admin_assets')
 
@@ -597,3 +720,46 @@ def admin_export_csv_view(request):
             branch_name,
         ])
     return response
+
+
+@admin_required
+def admin_history_view(request):
+    """Chronological log of assignment events; filterable by asset and user."""
+    events = (
+        AssignmentEvent.objects
+        .select_related('actor', 'asset', 'asset__category', 'from_user', 'to_user')
+        .order_by('-created_at')
+    )
+    asset_id = request.GET.get('asset')
+    user_id = request.GET.get('user')
+    if asset_id:
+        events = events.filter(asset_id=asset_id)
+    if user_id:
+        events = events.filter(Q(from_user_id=user_id) | Q(to_user_id=user_id))
+
+    paginator = Paginator(events, 50)
+    page = paginator.get_page(request.GET.get('page', 1))
+
+    return render(request, 'admin/history.html', {
+        'events': page,
+        'assets': Asset.objects.order_by('name'),
+        'users': User.objects.order_by('username'),
+        'selected_asset': asset_id,
+        'selected_user': user_id,
+    })
+
+
+@login_required
+def serve_media_view(request, path):
+    """Serve files under MEDIA_ROOT only to authenticated users.
+
+    Rejects path traversal: the resolved real path must remain inside MEDIA_ROOT.
+    """
+    media_root = os.path.realpath(str(settings.MEDIA_ROOT))
+    candidate = os.path.realpath(os.path.join(media_root, path))
+    if not (candidate == media_root or candidate.startswith(media_root + os.sep)):
+        raise Http404('Not found')
+    if not os.path.isfile(candidate):
+        raise Http404('Not found')
+    content_type, _ = mimetypes.guess_type(candidate)
+    return FileResponse(open(candidate, 'rb'), content_type=content_type or 'application/octet-stream')

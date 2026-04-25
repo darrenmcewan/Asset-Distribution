@@ -195,3 +195,72 @@ class Interest(models.Model):
         """Return the next position to use when appending a new interest for a user."""
         last = cls.objects.filter(user=user).aggregate(Max('position'))['position__max']
         return (last or 0) + 1
+
+
+class AssignmentEvent(models.Model):
+    """Audit-log row for every admin action that changes an asset's assignment or status."""
+    EVENT_TYPES = [
+        ('assign', 'Assign'),
+        ('unassign', 'Unassign'),
+        ('status_change', 'Status Change'),
+    ]
+
+    asset = models.ForeignKey(
+        Asset,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='events',
+    )
+    actor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assignment_events_performed',
+    )
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPES)
+    from_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assignment_events_from',
+    )
+    to_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assignment_events_to',
+    )
+    from_status = models.CharField(max_length=20, blank=True)
+    to_status = models.CharField(max_length=20, blank=True)
+    note = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['asset', '-created_at']),
+        ]
+
+    def __str__(self):
+        actor = self.actor.username if self.actor else 'system'
+        asset = self.asset.name if self.asset else '(deleted asset)'
+        return f'{actor} {self.event_type} {asset} @ {self.created_at:%Y-%m-%d %H:%M}'
+
+
+class AssetComment(models.Model):
+    """A plain-text comment posted by a user on an asset."""
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'Comment by {self.author.username} on {self.asset.name}'

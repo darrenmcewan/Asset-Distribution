@@ -45,5 +45,15 @@
                 applyTheme(nextTheme);
             });
         });
+
+        // Mobile nav: close hamburger menu when a nav link is clicked.
+        var navToggle = document.getElementById('nav-toggle');
+        if (navToggle) {
+            document.querySelectorAll('.header-inner .nav a').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    navToggle.checked = false;
+                });
+            });
+        }
     });
 })();

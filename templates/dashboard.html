@@ -39,7 +39,17 @@
     {% if recent_items %}
     <ul style="list-style: none;">
         {% for asset in recent_items %}
-        <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);"><a href="{% url 'asset_detail' asset.id %}">{{ asset.name }}</a> <span class="text-muted" style="font-size: 0.875rem;">- {{ asset.category.name }} - added {{ asset.created_at|date:"M j" }}</span></li>
+        <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--color-border); display: flex; align-items: center; gap: 0.75rem;">
+            {% with asset.get_primary_photo as photo %}
+            {% if photo %}<img src="{{ photo.image.url }}" alt="" class="admin-thumb">
+            {% else %}<div class="admin-thumb" style="background: var(--color-bg-light);"></div>{% endif %}
+            {% endwith %}
+            <div style="flex: 1;">
+                <a href="{% url 'asset_detail' asset.id %}">{{ asset.name }}</a>
+                <span class="text-muted" style="font-size: 0.875rem;">- {{ asset.category.name }} - added {{ asset.created_at|date:"M j" }}</span>
+                {% if asset.interest_count %}<span class="text-muted" style="font-size: 0.8125rem; margin-left: 0.5rem;">· <strong>{{ asset.interest_count }}</strong> interested</span>{% endif %}
+            </div>
+        </li>
         {% endfor %}
     </ul>
     {% else %}<p class="text-muted">No new items since your last visit.</p>{% endif %}

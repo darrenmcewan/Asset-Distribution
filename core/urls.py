@@ -4,6 +4,15 @@ URL routing for the core app.
 
 from django.contrib.auth import views as auth_views
 from django.urls import path
+from django.utils.decorators import method_decorator
+
+try:
+    from django_ratelimit.decorators import ratelimit
+except ImportError:  # pragma: no cover
+    def ratelimit(*args, **kwargs):
+        def decorator(view):
+            return view
+        return decorator
 
 from . import views
 
@@ -14,12 +23,14 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
 
     # Password reset (Django built-in views with custom templates)
-    path('password-reset/', auth_views.PasswordResetView.as_view(
+    path('password-reset/', method_decorator(
+            ratelimit(key='ip', rate='3/15m', block=True, method='POST'), name='dispatch'
+        )(auth_views.PasswordResetView.as_view(
         template_name='registration/password_reset_form.html',
         email_template_name='registration/password_reset_email.txt',
         subject_template_name='registration/password_reset_subject.txt',
         success_url='/password-reset/done/',
-    ), name='password_reset'),
+    )), name='password_reset'),
     path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(
         template_name='registration/password_reset_done.html',
     ), name='password_reset_done'),
@@ -36,6 +47,7 @@ urlpatterns = [
     path('assets/', views.browse_assets_view, name='browse_assets'),
     path('assets/<int:asset_id>/', views.asset_detail_view, name='asset_detail'),
     path('assets/<int:asset_id>/toggle-interest/', views.toggle_interest_view, name='toggle_interest'),
+    path('assets/<int:asset_id>/comments/', views.post_comment_view, name='post_comment'),
     path('interests/', views.my_interests_view, name='my_interests'),
     path('interests/reorder/', views.reorder_interests_view, name='reorder_interests'),
     path('my-items/', views.my_items_view, name='my_items'),
@@ -59,4 +71,6 @@ urlpatterns = [
     path('admin-panel/users/<int:user_id>/toggle-active/', views.admin_toggle_active_view, name='admin_toggle_active'),
     path('admin-panel/reports/', views.admin_reports_view, name='admin_reports'),
     path('admin-panel/reports/export/', views.admin_export_csv_view, name='admin_export_csv'),
+    path('admin-panel/history/', views.admin_history_view, name='admin_history'),
+    path('admin-panel/comments/<int:comment_id>/delete/', views.admin_delete_comment_view, name='admin_delete_comment'),
 ]

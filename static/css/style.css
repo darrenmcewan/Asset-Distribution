@@ -1176,3 +1176,134 @@ html[data-theme="dark"] .alert-info {
         justify-content: center;
     }
 }
+
+/* ============================================================================
+   Mobile hamburger nav (added by estate-distribution-hardening)
+   ============================================================================ */
+.nav-toggle { display: none; }
+.nav-hamburger { display: none; }
+
+@media (max-width: 768px) {
+    .header-inner {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    .nav-hamburger {
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: space-between;
+        width: 28px;
+        height: 22px;
+        cursor: pointer;
+        margin-left: auto;
+    }
+    .nav-hamburger span {
+        display: block;
+        height: 3px;
+        background: var(--color-text);
+        border-radius: 2px;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .header-inner .nav {
+        display: none;
+        flex-basis: 100%;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+        border-top: 1px solid var(--color-border);
+    }
+    .header-inner .user-info {
+        flex-basis: 100%;
+        justify-content: flex-end;
+    }
+    #nav-toggle:checked ~ .nav { display: flex; }
+    #nav-toggle:checked ~ .nav-hamburger span:nth-child(1) { transform: translateY(9px) rotate(45deg); }
+    #nav-toggle:checked ~ .nav-hamburger span:nth-child(2) { opacity: 0; }
+    #nav-toggle:checked ~ .nav-hamburger span:nth-child(3) { transform: translateY(-10px) rotate(-45deg); }
+}
+
+/* ============================================================================
+   Photo lightbox overlay
+   ============================================================================ */
+#lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+#lightbox.is-open { display: flex; }
+#lightbox-img {
+    max-width: 92vw;
+    max-height: 88vh;
+    border-radius: 4px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.lightbox-btn {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+.lightbox-btn:hover { background: rgba(255, 255, 255, 0.2); }
+.lightbox-btn.prev { left: 1rem; top: 50%; transform: translateY(-50%); }
+.lightbox-btn.next { right: 1rem; top: 50%; transform: translateY(-50%); }
+.lightbox-btn.close { right: 1rem; top: 1rem; }
+
+/* Photos within asset detail are clickable */
+.photo-main, .photo-gallery img { cursor: zoom-in; }
+
+/* ============================================================================
+   Comments
+   ============================================================================ */
+.comment-list { list-style: none; padding: 0; margin: 0; }
+.comment-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-border);
+}
+.comment-item:last-child { border-bottom: 0; }
+.comment-meta {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+.comment-author { font-weight: 600; color: var(--color-text); }
+.comment-author.anon { font-style: italic; }
+.comment-body { white-space: pre-wrap; word-wrap: break-word; }
+
+/* ============================================================================
+   Admin asset thumbnails
+   ============================================================================ */
+.admin-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-right: 0.5rem;
+}
+
+/* ============================================================================
+   Interest count badge on cards
+   ============================================================================ */
+.interest-count {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    margin-top: 0.25rem;
+}
+.interest-count strong { color: var(--clan-red); }
