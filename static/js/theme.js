@@ -9,9 +9,7 @@
             return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
         }
 
-        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-            ? 'dark'
-            : 'light';
+        return 'dark';
     }
 
     function applyTheme(theme) {

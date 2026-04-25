@@ -220,7 +220,7 @@ p {
 }
 
 .theme-toggle {
-    width: 2.25rem;
+    min-width: 2.25rem;
     height: 2.25rem;
     display: inline-flex;
     align-items: center;
@@ -231,6 +231,15 @@ p {
     color: var(--color-text);
     cursor: pointer;
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.theme-toggle-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
 }
 
 .theme-toggle:hover {
