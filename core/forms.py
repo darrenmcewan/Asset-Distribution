@@ -7,7 +7,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 
-from .models import Asset, AssetComment, Category, Branch, UserProfile
+from .models import Asset, AssetComment, Category, Branch, DisclaimerMessage, UserProfile
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -189,4 +189,30 @@ class CommentForm(forms.ModelForm):
         body = (self.cleaned_data.get('body') or '').strip()
         if not body:
             raise forms.ValidationError('Comment cannot be empty.')
+        return body
+
+
+class DisclaimerForm(forms.ModelForm):
+    """Admin form for editing a DisclaimerMessage."""
+    class Meta:
+        model = DisclaimerMessage
+        fields = ['title', 'body']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-input'}),
+            'body': forms.Textarea(attrs={'class': 'form-textarea', 'rows': 8}),
+        }
+        help_texts = {
+            'body': 'Markdown supported (paragraphs, **bold**, *italics*, lists, links). HTML is sanitized.',
+        }
+
+    def clean_title(self):
+        title = (self.cleaned_data.get('title') or '').strip()
+        if not title:
+            raise forms.ValidationError('Title is required.')
+        return title
+
+    def clean_body(self):
+        body = (self.cleaned_data.get('body') or '').strip()
+        if not body:
+            raise forms.ValidationError('Body is required.')
         return body

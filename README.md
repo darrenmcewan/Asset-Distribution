@@ -23,6 +23,11 @@ who ultimately gets each item.
   emailed automatically.
 - **Manual password reset** — admin can set a temporary password for any user and
   hand it over verbally as a fallback.
+- **Editable disclaimers** — a welcome message appears in a modal after login
+  (with a "Don't show me this again" option) and a confirmation modal appears every
+  time a user clicks "I want this", reminding them they're responsible for
+  arranging collection / shipping. Both messages are editable from the admin
+  portal under **Disclaimers**.
 
 ---
 

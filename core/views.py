@@ -18,7 +18,9 @@ from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
+from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -36,6 +38,7 @@ from .forms import (
     AssetForm,
     CategoryForm,
     CommentForm,
+    DisclaimerForm,
     SignupForm,
     StyledLoginForm,
 )
@@ -46,6 +49,7 @@ from .models import (
     AssignmentEvent,
     Branch,
     Category,
+    DisclaimerMessage,
     Interest,
     UserProfile,
 )
@@ -156,6 +160,16 @@ def dashboard_view(request):
         .order_by('-created_at')[:10]
     )
 
+    welcome = _welcome_disclaimer_for(user)
+    welcome_payload = None
+    if welcome is not None:
+        welcome_payload = {
+            'title': welcome.title,
+            'body_html': welcome.body_html,
+            'dismiss_url': reverse('dismiss_welcome_disclaimer'),
+            'csrf': get_token(request),
+        }
+
     context = {
         'assigned_items': assigned,
         'interests_preview': interests[:5],
@@ -163,8 +177,29 @@ def dashboard_view(request):
         'assigned_count': assigned.count(),
         'recent_items': recent,
         'recent_cutoff': cutoff,
+        'welcome_disclaimer': welcome,
+        'welcome_disclaimer_payload': welcome_payload,
     }
     return render(request, 'dashboard.html', context)
+
+
+def _welcome_disclaimer_for(user):
+    """Return the welcome DisclaimerMessage for the user, or None if dismissed/missing."""
+    profile = getattr(user, 'profile', None)
+    if profile is not None and profile.welcome_disclaimer_dismissed:
+        return None
+    return DisclaimerMessage.objects.filter(slug=DisclaimerMessage.SLUG_WELCOME).first()
+
+
+@login_required
+@require_POST
+def dismiss_welcome_disclaimer_view(request):
+    profile = getattr(request.user, 'profile', None)
+    if profile is None:
+        return JsonResponse({'success': False, 'error': 'No profile'}, status=400)
+    profile.welcome_disclaimer_dismissed = True
+    profile.save(update_fields=['welcome_disclaimer_dismissed'])
+    return JsonResponse({'success': True})
 
 
 @login_required
@@ -307,6 +342,20 @@ def toggle_interest_view(request, asset_id):
                 interest.position -= 1
                 interest.save(update_fields=['position'])
         return JsonResponse({'success': True, 'interested': False})
+
+    # Creating a new interest requires explicit disclaimer confirmation each time.
+    if request.POST.get('confirmed') != 'true':
+        disclaimer = DisclaimerMessage.objects.filter(
+            slug=DisclaimerMessage.SLUG_CLAIM_CONFIRMATION
+        ).first()
+        return JsonResponse({
+            'success': False,
+            'requires_confirmation': True,
+            'disclaimer': {
+                'title': disclaimer.title if disclaimer else 'Confirm your interest',
+                'body_html': disclaimer.body_html if disclaimer else '',
+            },
+        })
 
     with transaction.atomic():
         Interest.objects.create(
@@ -746,6 +795,41 @@ def admin_history_view(request):
         'users': User.objects.order_by('username'),
         'selected_asset': asset_id,
         'selected_user': user_id,
+    })
+
+
+@admin_required
+def admin_disclaimers_view(request):
+    welcome = DisclaimerMessage.objects.filter(slug=DisclaimerMessage.SLUG_WELCOME).first()
+    claim = DisclaimerMessage.objects.filter(slug=DisclaimerMessage.SLUG_CLAIM_CONFIRMATION).first()
+
+    welcome_form = DisclaimerForm(instance=welcome, prefix='welcome')
+    claim_form = DisclaimerForm(instance=claim, prefix='claim')
+
+    if request.method == 'POST':
+        target = request.POST.get('target')
+        if target == 'welcome' and welcome is not None:
+            welcome_form = DisclaimerForm(request.POST, instance=welcome, prefix='welcome')
+            if welcome_form.is_valid():
+                obj = welcome_form.save(commit=False)
+                obj.updated_by = request.user
+                obj.save()
+                messages.success(request, 'Welcome disclaimer updated.')
+                return redirect('admin_disclaimers')
+        elif target == 'claim' and claim is not None:
+            claim_form = DisclaimerForm(request.POST, instance=claim, prefix='claim')
+            if claim_form.is_valid():
+                obj = claim_form.save(commit=False)
+                obj.updated_by = request.user
+                obj.save()
+                messages.success(request, 'Claim confirmation disclaimer updated.')
+                return redirect('admin_disclaimers')
+
+    return render(request, 'admin/disclaimers.html', {
+        'welcome': welcome,
+        'claim': claim,
+        'welcome_form': welcome_form,
+        'claim_form': claim_form,
     })
 
 

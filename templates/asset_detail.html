@@ -169,13 +169,47 @@
 {% block extra_js %}
 <script>
 function toggleInterest(assetId, button) {
+    sendInterest(assetId, button, false);
+}
+
+function sendInterest(assetId, button, confirmed) {
+    if (button) button.disabled = true;
+    var body = confirmed ? 'confirmed=true' : '';
     fetch(`/assets/${assetId}/toggle-interest/`, {
         method: 'POST',
-        headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'}
+        headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded'},
+        body: body
     })
     .then(r => r.json())
-    .then(data => { if (data.success) { location.reload(); } else { alert(data.error || 'An error occurred'); } })
-    .catch(() => alert('An error occurred'));
+    .then(data => {
+        if (data.requires_confirmation) {
+            promptConfirmation(data.disclaimer, function () { sendInterest(assetId, button, true); }, function () { if (button) button.disabled = false; });
+            return;
+        }
+        if (data.success) { location.reload(); }
+        else { if (button) button.disabled = false; alert(data.error || 'An error occurred'); }
+    })
+    .catch(() => { if (button) button.disabled = false; alert('An error occurred'); });
+}
+
+function promptConfirmation(disclaimer, onConfirm, onCancel) {
+    if (!window.Disclaimer) { onConfirm(); return; }
+    var html =
+        '<h2 class="disclaimer-modal__title">' + window.Disclaimer.escapeHtml(disclaimer.title || 'Confirm') + '</h2>' +
+        '<div class="disclaimer-modal__body">' + (disclaimer.body_html || '') + '</div>' +
+        '<div class="disclaimer-modal__footer">' +
+            '<button type="button" class="btn btn-secondary" id="claim-cancel-btn">Cancel</button>' +
+            '<button type="button" class="btn btn-primary" id="claim-confirm-btn">Confirm</button>' +
+        '</div>';
+    window.Disclaimer.show(html, { allowBackdropClose: false });
+    document.getElementById('claim-cancel-btn').addEventListener('click', function () {
+        window.Disclaimer.hide();
+        if (onCancel) onCancel();
+    });
+    document.getElementById('claim-confirm-btn').addEventListener('click', function () {
+        window.Disclaimer.hide();
+        onConfirm();
+    });
 }
 
 (function () {

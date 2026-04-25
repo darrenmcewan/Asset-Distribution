@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Disclaimers - Admin{% endblock %}
+{% block content %}
+<h1>Disclaimers</h1>
+<nav class="admin-nav">
+    <a href="{% url 'admin_panel' %}">Dashboard</a>
+    <a href="{% url 'admin_users' %}">Users</a>
+    <a href="{% url 'admin_assets' %}">Assets</a>
+    <a href="{% url 'admin_categories' %}">Categories</a>
+    <a href="{% url 'admin_interests' %}">Interests</a>
+    <a href="{% url 'admin_history' %}">History</a>
+    <a href="{% url 'admin_reports' %}">Reports</a>
+    <a href="{% url 'admin_disclaimers' %}" class="active">Disclaimers</a>
+</nav>
+
+<p class="text-muted mb-3">
+    Edit the messages family members see when they log in and when they confirm "I want this".
+    Markdown is supported; HTML is sanitized.
+</p>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Welcome message (shown after login)</h3>
+        {% if welcome and welcome.updated_at %}
+        <span class="text-muted" style="font-size: 0.875rem;">
+            Last updated {{ welcome.updated_at|date:"M j, Y g:i a" }}{% if welcome.updated_by %} by {{ welcome.updated_by.username }}{% endif %}
+        </span>
+        {% endif %}
+    </div>
+    {% if welcome %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="target" value="welcome">
+        <div class="form-group">
+            <label for="id_welcome-title">Title</label>
+            {{ welcome_form.title }}
+            {% if welcome_form.title.errors %}<div class="text-danger" style="font-size: 0.875rem;">{{ welcome_form.title.errors|join:" " }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+            <label for="id_welcome-body">Body</label>
+            {{ welcome_form.body }}
+            <small class="text-muted">{{ welcome_form.body.help_text }}</small>
+            {% if welcome_form.body.errors %}<div class="text-danger" style="font-size: 0.875rem;">{{ welcome_form.body.errors|join:" " }}</div>{% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary">Save welcome message</button>
+    </form>
+    {% else %}
+    <p class="text-muted">Welcome disclaimer record is missing. Run the data migration.</p>
+    {% endif %}
+</div>
+
+<div class="card mt-3">
+    <div class="card-header">
+        <h3 class="card-title">Claim confirmation message (shown when a user clicks "I want this")</h3>
+        {% if claim and claim.updated_at %}
+        <span class="text-muted" style="font-size: 0.875rem;">
+            Last updated {{ claim.updated_at|date:"M j, Y g:i a" }}{% if claim.updated_by %} by {{ claim.updated_by.username }}{% endif %}
+        </span>
+        {% endif %}
+    </div>
+    {% if claim %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="target" value="claim">
+        <div class="form-group">
+            <label for="id_claim-title">Title</label>
+            {{ claim_form.title }}
+            {% if claim_form.title.errors %}<div class="text-danger" style="font-size: 0.875rem;">{{ claim_form.title.errors|join:" " }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+            <label for="id_claim-body">Body</label>
+            {{ claim_form.body }}
+            <small class="text-muted">{{ claim_form.body.help_text }}</small>
+            {% if claim_form.body.errors %}<div class="text-danger" style="font-size: 0.875rem;">{{ claim_form.body.errors|join:" " }}</div>{% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary">Save claim confirmation</button>
+    </form>
+    {% else %}
+    <p class="text-muted">Claim confirmation record is missing. Run the data migration.</p>
+    {% endif %}
+</div>
+{% endblock %}

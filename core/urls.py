@@ -52,6 +52,7 @@ urlpatterns = [
     path('interests/reorder/', views.reorder_interests_view, name='reorder_interests'),
     path('my-items/', views.my_items_view, name='my_items'),
     path('upload/', views.upload_asset_view, name='upload_asset'),
+    path('disclaimers/welcome/dismiss/', views.dismiss_welcome_disclaimer_view, name='dismiss_welcome_disclaimer'),
 
     # Admin
     path('admin-panel/', views.admin_panel_view, name='admin_panel'),
@@ -73,4 +74,5 @@ urlpatterns = [
     path('admin-panel/reports/export/', views.admin_export_csv_view, name='admin_export_csv'),
     path('admin-panel/history/', views.admin_history_view, name='admin_history'),
     path('admin-panel/comments/<int:comment_id>/delete/', views.admin_delete_comment_view, name='admin_delete_comment'),
+    path('admin-panel/disclaimers/', views.admin_disclaimers_view, name='admin_disclaimers'),
 ]

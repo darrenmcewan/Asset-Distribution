@@ -55,3 +55,39 @@
     {% else %}<p class="text-muted">No new items since your last visit.</p>{% endif %}
 </div>
 {% endblock %}
+
+{% block extra_js %}
+{% if welcome_disclaimer %}
+{{ welcome_disclaimer_payload|json_script:"welcome-disclaimer-data" }}
+<script>
+(function () {
+    var raw = document.getElementById('welcome-disclaimer-data');
+    if (!raw || !window.Disclaimer) return;
+    var data;
+    try { data = JSON.parse(raw.textContent); } catch (e) { return; }
+
+    var html =
+        '<h2 class="disclaimer-modal__title">' + window.Disclaimer.escapeHtml(data.title) + '</h2>' +
+        '<div class="disclaimer-modal__body">' + data.body_html + '</div>' +
+        '<div class="disclaimer-modal__footer">' +
+            '<label class="disclaimer-modal__dismiss">' +
+                '<input type="checkbox" id="welcome-dismiss-checkbox"> Don\'t show me this again' +
+            '</label>' +
+            '<button type="button" class="btn btn-primary" id="welcome-close-btn">Got it</button>' +
+        '</div>';
+
+    window.Disclaimer.show(html, { allowBackdropClose: false });
+
+    document.getElementById('welcome-close-btn').addEventListener('click', function () {
+        var checked = document.getElementById('welcome-dismiss-checkbox').checked;
+        window.Disclaimer.hide();
+        if (!checked) return;
+        fetch(data.dismiss_url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': data.csrf, 'Content-Type': 'application/x-www-form-urlencoded' },
+        }).catch(function () { /* non-fatal */ });
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

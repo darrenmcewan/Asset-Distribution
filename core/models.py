@@ -34,6 +34,7 @@ class UserProfile(models.Model):
     """Profile attached to each Django User. Holds the branch association."""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     branch = models.ForeignKey(Branch, on_delete=models.PROTECT, related_name='users')
+    welcome_disclaimer_dismissed = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username} ({self.branch.name})"
@@ -264,3 +265,49 @@ class AssetComment(models.Model):
 
     def __str__(self):
         return f'Comment by {self.author.username} on {self.asset.name}'
+
+
+class DisclaimerMessage(models.Model):
+    """Admin-editable disclaimer messages, keyed by slug."""
+    SLUG_WELCOME = 'welcome'
+    SLUG_CLAIM_CONFIRMATION = 'claim_confirmation'
+    SLUG_CHOICES = [
+        (SLUG_WELCOME, 'Welcome'),
+        (SLUG_CLAIM_CONFIRMATION, 'Claim Confirmation'),
+    ]
+
+    # Allow-list for sanitized HTML output of the disclaimer body.
+    ALLOWED_TAGS = ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h2', 'h3']
+    ALLOWED_ATTRIBUTES = {'a': ['href', 'title', 'rel', 'target']}
+
+    slug = models.CharField(max_length=32, unique=True, choices=SLUG_CHOICES)
+    title = models.CharField(max_length=200)
+    body = models.TextField(help_text='Markdown supported. A safe subset of HTML is rendered.')
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='disclaimer_edits',
+    )
+
+    def __str__(self):
+        return f'{self.get_slug_display()} disclaimer'
+
+    @property
+    def body_html(self):
+        """Render the body as Markdown then sanitize with the allow-list."""
+        try:
+            import bleach
+            import markdown as md
+        except ImportError:  # pragma: no cover - dependencies are required at runtime
+            return self.body
+        rendered = md.markdown(self.body or '', extensions=['extra', 'sane_lists'])
+        cleaned = bleach.clean(
+            rendered,
+            tags=self.ALLOWED_TAGS,
+            attributes=self.ALLOWED_ATTRIBUTES,
+            strip=True,
+        )
+        return bleach.linkify(cleaned)
