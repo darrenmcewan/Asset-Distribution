@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Asset Distribution{% endblock %}</title>
+    {% include 'includes/theme_init.html' %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
@@ -24,6 +25,7 @@
                         {% if user.is_staff %}<a href="{% url 'admin_panel' %}" class="btn btn-sm btn-primary">Admin</a>{% endif %}
                     </nav>
                     <div class="user-info">
+                        {% include 'includes/theme_toggle.html' %}
                         <span><strong class="user-name">{{ user.username }}</strong>{% if user_branch %} <span class="text-muted">({{ user_branch.name }})</span>{% endif %}</span>
                         <a href="{% url 'logout' %}" class="btn btn-sm btn-secondary">Logout</a>
                     </div>
@@ -41,6 +43,7 @@
             <div class="container"><p>&copy; 2026 Family Asset Distribution System</p></div>
         </footer>
     </div>
+    <script src="{% static 'js/theme.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

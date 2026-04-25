@@ -7,6 +7,7 @@
    CSS Variables
    ============================================================================ */
 :root {
+    color-scheme: light;
     --color-primary: #2c5282;
     --color-primary-dark: #1a365d;
     --color-primary-light: #4299e1;
@@ -39,6 +40,34 @@
     --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
+html[data-theme="dark"] {
+    color-scheme: dark;
+    --color-primary: #63b3ed;
+    --color-primary-dark: #90cdf4;
+    --color-primary-light: #4299e1;
+    --color-secondary: #a0aec0;
+    --color-success: #68d391;
+    --color-warning: #f6ad55;
+    --color-danger: #fc8181;
+    --color-info: #63b3ed;
+
+    --color-bg: #10151f;
+    --color-bg-white: #171f2d;
+    --color-bg-light: #222c3d;
+    --color-bg-dark: #2d3748;
+
+    --color-text: #edf2f7;
+    --color-text-light: #cbd5e0;
+    --color-text-muted: #a0aec0;
+
+    --color-border: #2d3748;
+    --color-border-dark: #4a5568;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 4px 8px -1px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 14px 24px -8px rgba(0, 0, 0, 0.55);
+}
+
 /* ============================================================================
    Reset & Base
    ============================================================================ */
@@ -58,6 +87,7 @@ body {
     background-color: var(--color-bg);
     color: var(--color-text);
     min-height: 100vh;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 a {
@@ -189,6 +219,52 @@ p {
     color: var(--color-text);
 }
 
+.theme-toggle {
+    width: 2.25rem;
+    height: 2.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border-dark);
+    border-radius: 9999px;
+    background-color: var(--color-bg-white);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.theme-toggle:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.theme-toggle:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.25);
+}
+
+.theme-toggle-icon {
+    width: 1rem;
+    height: 1rem;
+    background-color: transparent;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--color-bg-white), 0 0 0 4px currentColor;
+}
+
+html[data-theme="dark"] .theme-toggle-icon {
+    background-color: currentColor;
+    border-color: currentColor;
+    box-shadow: inset -0.35rem -0.2rem 0 0 var(--color-bg-white);
+}
+
+.auth-theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+}
+
 /* ============================================================================
    Cards
    ============================================================================ */
@@ -311,19 +387,41 @@ p {
 
 .form-input,
 .form-select,
-.form-textarea {
+.form-textarea,
+input[type="email"],
+input[type="number"],
+input[type="password"],
+input[type="search"],
+input[type="text"],
+select,
+textarea {
     width: 100%;
     padding: 0.625rem 0.875rem;
     font-size: 1rem;
     border: 1px solid var(--color-border-dark);
     border-radius: var(--radius-sm);
     background-color: var(--color-bg-white);
+    color: var(--color-text);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: var(--color-text-muted);
 }
 
 .form-input:focus,
 .form-select:focus,
-.form-textarea:focus {
+.form-textarea:focus,
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+input[type="text"]:focus,
+select:focus,
+textarea:focus {
     outline: none;
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
@@ -412,6 +510,26 @@ p {
 .badge-donated {
     background-color: #e9d8fd;
     color: #553c9a;
+}
+
+html[data-theme="dark"] .badge-available {
+    background-color: #22543d;
+    color: #c6f6d5;
+}
+
+html[data-theme="dark"] .badge-claimed {
+    background-color: #2a4365;
+    color: #bee3f8;
+}
+
+html[data-theme="dark"] .badge-sold {
+    background-color: #744210;
+    color: #feebc8;
+}
+
+html[data-theme="dark"] .badge-donated {
+    background-color: #44337a;
+    color: #e9d8fd;
 }
 
 /* ============================================================================
@@ -577,6 +695,30 @@ p {
     background-color: #bee3f8;
     border-color: #90cdf4;
     color: #2a4365;
+}
+
+html[data-theme="dark"] .alert-success {
+    background-color: #1c4532;
+    border-color: #276749;
+    color: #c6f6d5;
+}
+
+html[data-theme="dark"] .alert-error {
+    background-color: #63171b;
+    border-color: #9b2c2c;
+    color: #fed7d7;
+}
+
+html[data-theme="dark"] .alert-warning {
+    background-color: #652b19;
+    border-color: #975a16;
+    color: #feebc8;
+}
+
+html[data-theme="dark"] .alert-info {
+    background-color: #2a4365;
+    border-color: #2b6cb0;
+    color: #bee3f8;
 }
 
 /* ============================================================================
@@ -921,6 +1063,11 @@ p {
     }
     
     .nav {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .user-info {
         flex-wrap: wrap;
         justify-content: center;
     }

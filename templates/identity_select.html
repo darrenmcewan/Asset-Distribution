@@ -5,9 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Select Your Identity - Asset Distribution</title>
+    {% include 'includes/theme_init.html' %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
+    <div class="auth-theme-toggle">{% include 'includes/theme_toggle.html' %}</div>
     <div class="container" style="padding: 2rem 1rem;">
         <div style="text-align: center; margin-bottom: 2rem;">
             <h1>Who are you?</h1>
@@ -39,5 +41,6 @@
             <a href="{% url 'logout' %}" class="text-muted">← Back to Login</a>
         </div>
     </div>
+    <script src="{% static 'js/theme.js' %}"></script>
 </body>
 </html>

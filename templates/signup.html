@@ -5,9 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - Asset Distribution</title>
+    {% include 'includes/theme_init.html' %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
+    <div class="auth-theme-toggle">{% include 'includes/theme_toggle.html' %}</div>
     <div class="login-container">
         <div class="login-box" style="max-width: 480px;">
             <h1 class="login-title">Create an Account</h1>
@@ -26,5 +28,6 @@
             <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--color-border);">Already have an account? <a href="{% url 'login' %}">Log in</a></div>
         </div>
     </div>
+    <script src="{% static 'js/theme.js' %}"></script>
 </body>
 </html>
