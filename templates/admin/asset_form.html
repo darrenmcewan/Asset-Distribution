@@ -73,7 +73,14 @@
         <input type="file" name="photos" multiple accept="image/*" class="form-input">
     </div>
     
-    {% if asset %}
+    <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary btn-lg">{% if asset %}Update{% else %}Add{% endif %} Asset</button>
+        <a href="{% url 'admin_assets' %}" class="btn btn-secondary btn-lg">Cancel</a>
+    </div>
+</form>
+
+{% if asset %}
+<div class="card mt-3">
     <div class="form-group">
         <label class="form-label">Status</label>
         <div class="flex gap-2">
@@ -90,13 +97,8 @@
         </div>
         <p class="form-help">Current status: <span class="badge badge-{{ asset.status }}">{{ asset.get_status_display }}</span></p>
     </div>
-    {% endif %}
-    
-    <div class="flex gap-2">
-        <button type="submit" class="btn btn-primary btn-lg">{% if asset %}Update{% else %}Add{% endif %} Asset</button>
-        <a href="{% url 'admin_assets' %}" class="btn btn-secondary btn-lg">Cancel</a>
-    </div>
-</form>
+</div>
+{% endif %}
 
 {% endblock %}
 
@@ -104,7 +106,7 @@
 <script>
 function deletePhoto(photoId) {
     if (confirm('Delete this photo?')) {
-        fetch(`/admin/photos/${photoId}/delete/`, {
+        fetch(`/admin-panel/photos/${photoId}/delete/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}'
