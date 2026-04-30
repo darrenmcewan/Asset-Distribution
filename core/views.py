@@ -6,6 +6,7 @@ import csv
 import json
 import mimetypes
 import os
+import re
 from datetime import timedelta
 
 from django.conf import settings
@@ -224,6 +225,9 @@ def browse_assets_view(request):
     paginator = Paginator(assets, 12)
     page = request.GET.get('page', 1)
 
+    # Build the current browse query string for back-link preservation
+    browse_params = request.GET.urlencode()
+
     return render(request, 'browse_assets.html', {
         'assets': paginator.get_page(page),
         'categories': Category.objects.annotate(asset_count=Count('assets')),
@@ -231,6 +235,7 @@ def browse_assets_view(request):
         'search': search,
         'status_filter': status_filter,
         'my_interest_asset_ids': my_interest_asset_ids,
+        'browse_query': browse_params,
     })
 
 
@@ -268,6 +273,11 @@ def asset_detail_view(request, asset_id):
             .order_by('-created_at')
         )
 
+    # Preserve browse state for back link — only allow safe query string content
+    back_query = request.GET.get('back', '')
+    if back_query and not re.fullmatch(r'[a-zA-Z0-9&=_%+\-\.]*', back_query):
+        back_query = ''
+
     return render(request, 'asset_detail.html', {
         'asset': asset,
         'interest': interest,
@@ -276,6 +286,7 @@ def asset_detail_view(request, asset_id):
         'alias_map': alias_map,
         'comment_form': CommentForm(),
         'events': events,
+        'back_query': back_query,
     })
 
 

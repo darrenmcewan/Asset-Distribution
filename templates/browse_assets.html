@@ -47,7 +47,7 @@
 <div class="asset-grid">
     {% for asset in assets %}
     <div class="asset-card">
-        <a href="{% url 'asset_detail' asset.id %}">
+        <a href="{% url 'asset_detail' asset.id %}{% if browse_query %}?back={{ browse_query|urlencode:'' }}{% endif %}">
             <div class="asset-card-image">
                 {% with asset.get_primary_photo as photo %}
                 {% if photo %}
@@ -60,7 +60,7 @@
         </a>
         <div class="asset-card-body">
             <h3 class="asset-card-title">
-                <a href="{% url 'asset_detail' asset.id %}" style="color: inherit;">{{ asset.name }}</a>
+                <a href="{% url 'asset_detail' asset.id %}{% if browse_query %}?back={{ browse_query|urlencode:'' }}{% endif %}" style="color: inherit;">{{ asset.name }}</a>
             </h3>
             <p class="asset-card-category">
                 {{ asset.category.name }}
