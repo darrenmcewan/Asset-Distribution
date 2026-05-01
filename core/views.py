@@ -17,7 +17,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Q
+from django.db.models import Count, OuterRef, Q, Subquery
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, redirect, render
@@ -764,19 +764,36 @@ def admin_export_csv_view(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="distribution_report.csv"'
     writer = csv.writer(response)
-    writer.writerow(['Asset', 'Category', 'Status', 'Assigned To', 'Branch'])
+    writer.writerow(['Item #', 'Asset', 'Category', 'Status', 'Assigned To', 'Assigned By', 'Assigned On', 'Branch'])
 
-    qs = Asset.objects.select_related('category', 'assigned_to', 'assigned_to__profile', 'assigned_to__profile__branch')
+    latest_assign = AssignmentEvent.objects.filter(
+        asset=OuterRef('pk'),
+        event_type='assign',
+    ).order_by('-created_at')
+
+    qs = (
+        Asset.objects
+        .select_related('category', 'assigned_to', 'assigned_to__profile', 'assigned_to__profile__branch')
+        .annotate(
+            assigned_by_username=Subquery(latest_assign.values('actor__username')[:1]),
+            assigned_on_date=Subquery(latest_assign.values('created_at')[:1]),
+        )
+    )
     for asset in qs:
         username = asset.assigned_to.username if asset.assigned_to else ''
         branch_name = ''
         if asset.assigned_to and hasattr(asset.assigned_to, 'profile'):
             branch_name = asset.assigned_to.profile.branch.name
+        assigned_by = asset.assigned_by_username or ''
+        assigned_on = asset.assigned_on_date.strftime('%Y-%m-%d') if asset.assigned_on_date else ''
         writer.writerow([
+            asset.serial_number,
             asset.name,
             asset.category.name,
             asset.get_status_display(),
             username,
+            assigned_by,
+            assigned_on,
             branch_name,
         ])
     return response
