@@ -56,6 +56,7 @@
         <table class="table">
             <thead>
                 <tr>
+                    <th>Item #</th>
                     <th>Photo</th>
                     <th>Name</th>
                     <th>Category</th>
@@ -68,6 +69,7 @@
             <tbody>
                 {% for asset in assets %}
                 <tr>
+                    <td>{{ asset.serial_number }}</td>
                     <td style="width: 60px;">
                         {% with asset.get_primary_photo as photo %}
                         {% if photo %}
