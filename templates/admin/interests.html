@@ -7,6 +7,7 @@
     <a href="{% url 'admin_users' %}">Users</a>
     <a href="{% url 'admin_assets' %}">Assets</a>
     <a href="{% url 'admin_categories' %}">Categories</a>
+    <a href="{% url 'admin_locations' %}">Locations</a>
     <a href="{% url 'admin_interests' %}" class="active">Interests</a>
     <a href="{% url 'admin_history' %}">History</a>
     <a href="{% url 'admin_reports' %}">Reports</a>
@@ -23,12 +24,13 @@
     <div class="card-header"><h3 class="card-title">Items with Interest ({{ assets|length }})</h3></div>
     {% if assets %}
     <table class="table">
-        <thead><tr><th>Item</th><th>Category</th><th># Interested</th><th>Who Wants It</th></tr></thead>
+        <thead><tr><th>Item</th><th>Category</th><th>Location</th><th># Interested</th><th>Who Wants It</th></tr></thead>
         <tbody>
             {% for asset in assets %}
             <tr>
                 <td><a href="{% url 'asset_detail' asset.id %}">{{ asset.name }}</a></td>
                 <td>{{ asset.category.name }}</td>
+                <td>{{ asset.location.name }}</td>
                 <td><strong>{{ asset.interest_count }}</strong></td>
                 <td>
                     {% for interest in asset.interests.all %}
@@ -50,13 +52,14 @@
         <span class="badge badge-available">{{ u.interest_count }} items</span>
     </div>
     <table class="table">
-        <thead><tr><th>#</th><th>Item</th><th>Category</th><th>Status</th></tr></thead>
+        <thead><tr><th>#</th><th>Item</th><th>Category</th><th>Location</th><th>Status</th></tr></thead>
         <tbody>
             {% for interest in u.interests.all %}
             <tr>
                 <td><strong>{{ interest.position }}</strong></td>
                 <td><a href="{% url 'asset_detail' interest.asset.id %}">{{ interest.asset.name }}</a></td>
                 <td>{{ interest.asset.category.name }}</td>
+                <td>{{ interest.asset.location.name }}</td>
                 <td><span class="badge badge-{{ interest.asset.status }}">{{ interest.asset.get_status_display }}</span></td>
             </tr>
             {% endfor %}

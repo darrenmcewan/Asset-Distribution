@@ -16,7 +16,7 @@
         {% if assigned_items %}
         <ul style="list-style: none;">
             {% for item in assigned_items|slice:":5" %}
-            <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);"><a href="{% url 'asset_detail' item.id %}">{{ item.name }}</a> <span class="text-muted" style="font-size: 0.875rem;">- {{ item.category.name }}</span></li>
+            <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);"><a href="{% url 'asset_detail' item.id %}">{{ item.name }}</a> <span class="text-muted" style="font-size: 0.875rem;">- {{ item.category.name }} - {{ item.location.name }}</span></li>
             {% endfor %}
         </ul>
         {% else %}<p class="text-muted">No items assigned to you yet.</p>{% endif %}
@@ -46,7 +46,7 @@
             {% endwith %}
             <div style="flex: 1;">
                 <a href="{% url 'asset_detail' asset.id %}">{{ asset.name }}</a>
-                <span class="text-muted" style="font-size: 0.875rem;">- {{ asset.category.name }} - added {{ asset.created_at|date:"M j" }}</span>
+                <span class="text-muted" style="font-size: 0.875rem;">- {{ asset.category.name }} - {{ asset.location.name }} - added {{ asset.created_at|date:"M j" }}</span>
                 {% if asset.interest_count %}<span class="text-muted" style="font-size: 0.8125rem; margin-left: 0.5rem;">· <strong>{{ asset.interest_count }}</strong> interested</span>{% endif %}
             </div>
         </li>

@@ -12,6 +12,7 @@ from .models import (
     Branch,
     Category,
     Interest,
+    Location,
     UserProfile,
 )
 
@@ -35,6 +36,12 @@ class CategoryAdmin(admin.ModelAdmin):
     ordering = ['display_order', 'name']
 
 
+@admin.register(Location)
+class LocationAdmin(admin.ModelAdmin):
+    list_display = ['name', 'display_order', 'get_asset_count']
+    ordering = ['display_order', 'name']
+
+
 class AssetPhotoInline(admin.TabularInline):
     model = AssetPhoto
     extra = 1
@@ -42,8 +49,8 @@ class AssetPhotoInline(admin.TabularInline):
 
 @admin.register(Asset)
 class AssetAdmin(admin.ModelAdmin):
-    list_display = ['name', 'category', 'status', 'assigned_to', 'created_at']
-    list_filter = ['status', 'category']
+    list_display = ['name', 'category', 'location', 'status', 'assigned_to', 'created_at']
+    list_filter = ['status', 'category', 'location']
     search_fields = ['name', 'description']
     inlines = [AssetPhotoInline]
 
@@ -51,7 +58,7 @@ class AssetAdmin(admin.ModelAdmin):
 @admin.register(Interest)
 class InterestAdmin(admin.ModelAdmin):
     list_display = ['user', 'asset', 'position', 'created_at']
-    list_filter = ['user', 'asset__category']
+    list_filter = ['user', 'asset__category', 'asset__location']
     ordering = ['user', 'position']
 
 

@@ -1,5 +1,5 @@
 """
-Initial setup: branches, categories, optional superuser.
+Initial setup: branches, categories, locations, optional superuser.
 
 Usage:
     python manage.py setup_initial_data
@@ -10,7 +10,7 @@ import os
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from core.models import Branch, Category, UserProfile
+from core.models import Branch, Category, Location, UserProfile
 
 
 class Command(BaseCommand):
@@ -45,6 +45,21 @@ class Command(BaseCommand):
         ]
         for name, order in categories:
             Category.objects.get_or_create(
+                name=name,
+                defaults={'display_order': order},
+            )
+
+        # Locations
+        self.stdout.write('Creating locations...')
+        locations = [
+            ('Unspecified', 0), ('Kitchen', 1), ('Dining Room', 2), ('Living Room', 3),
+            ('Family Room', 4), ('Bedroom', 5), ('Primary Bedroom', 6), ('Office', 7),
+            ('Bathroom', 8), ('Laundry Room', 9), ('Garage', 10), ('Basement', 11),
+            ('Attic', 12), ('Entryway', 13), ('Patio/Outdoor', 14), ('Storage', 15),
+            ('Miscellaneous', 16),
+        ]
+        for name, order in locations:
+            Location.objects.get_or_create(
                 name=name,
                 defaults={'display_order': order},
             )

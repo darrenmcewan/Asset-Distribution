@@ -4,6 +4,7 @@ An item from the family asset distribution has been assigned to you:
 
   Name: {{ asset.name }}
   Category: {{ asset.category.name }}
+  Location: {{ asset.location.name }}
 {% if asset.description %}
   Description: {{ asset.description }}
 {% endif %}

@@ -7,6 +7,7 @@
     <a href="{% url 'admin_users' %}">Users</a>
     <a href="{% url 'admin_assets' %}">Assets</a>
     <a href="{% url 'admin_categories' %}">Categories</a>
+    <a href="{% url 'admin_locations' %}">Locations</a>
     <a href="{% url 'admin_interests' %}">Interests</a>
     <a href="{% url 'admin_history' %}">History</a>
     <a href="{% url 'admin_reports' %}" class="active">Reports</a>
@@ -22,6 +23,18 @@
         <tbody>
             {% for cat in categories %}
             <tr><td><strong>{{ cat.name }}</strong></td><td>{{ cat.total }}</td><td>{{ cat.available }}</td><td>{{ cat.claimed }}</td><td>{{ cat.sold }}</td><td>{{ cat.donated }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3 class="card-title">By Location</h3></div>
+    <table class="table">
+        <thead><tr><th>Location</th><th>Total</th><th>Available</th><th>Claimed</th><th>Sold</th><th>Donated</th></tr></thead>
+        <tbody>
+            {% for loc in locations %}
+            <tr><td><strong>{{ loc.name }}</strong></td><td>{{ loc.total }}</td><td>{{ loc.available }}</td><td>{{ loc.claimed }}</td><td>{{ loc.sold }}</td><td>{{ loc.donated }}</td></tr>
             {% endfor %}
         </tbody>
     </table>

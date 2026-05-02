@@ -60,6 +60,25 @@ class Category(models.Model):
         return self.assets.filter(status='available').count()
 
 
+class Location(models.Model):
+    """Physical location where an asset was found or stored."""
+    name = models.CharField(max_length=100, unique=True)
+    display_order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['display_order', 'name']
+
+    def __str__(self):
+        return self.name
+
+    def get_asset_count(self):
+        return self.assets.count()
+
+    def get_available_count(self):
+        return self.assets.filter(status='available').count()
+
+
 class Asset(models.Model):
     """An item in the estate to be distributed."""
     STATUS_CHOICES = [
@@ -72,6 +91,7 @@ class Asset(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='assets')
+    location = models.ForeignKey(Location, on_delete=models.PROTECT, related_name='assets')
     condition = models.CharField(max_length=100, blank=True)
     notes = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
@@ -93,10 +113,10 @@ class Asset(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['category__display_order', 'name']
+        ordering = ['category__display_order', 'location__display_order', 'name']
 
     def __str__(self):
-        return f"{self.name} ({self.category.name})"
+        return f"{self.name} ({self.category.name}, {self.location.name})"
 
     def get_primary_photo(self):
         return self.photos.first()

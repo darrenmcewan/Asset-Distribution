@@ -46,6 +46,19 @@
             <p class="form-help">Enter a new category name if not in the list</p>
         </div>
     </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+            <label class="form-label" for="id_location">Existing Location</label>
+            {{ form.location }}
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="id_new_location">Or New Location</label>
+            {{ form.new_location }}
+            <p class="form-help">Enter a new room or area if not in the list</p>
+        </div>
+    </div>
     
     <div class="form-group">
         <label class="form-label" for="id_condition">Condition</label>

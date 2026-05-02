@@ -40,6 +40,7 @@ from .forms import (
     CategoryForm,
     CommentForm,
     DisclaimerForm,
+    LocationForm,
     SignupForm,
     StyledLoginForm,
 )
@@ -52,6 +53,7 @@ from .models import (
     Category,
     DisclaimerMessage,
     Interest,
+    Location,
     UserProfile,
 )
 
@@ -142,11 +144,11 @@ def _previous_login(request):
 @login_required
 def dashboard_view(request):
     user = request.user
-    assigned = Asset.objects.filter(assigned_to=user).select_related('category')
+    assigned = Asset.objects.filter(assigned_to=user).select_related('category', 'location')
     interests = (
         Interest.objects
         .filter(user=user)
-        .select_related('asset', 'asset__category')
+        .select_related('asset', 'asset__category', 'asset__location')
         .order_by('position')
     )
 
@@ -155,7 +157,7 @@ def dashboard_view(request):
         Asset.objects
         .filter(created_at__gt=cutoff, status='available')
         .exclude(created_by=user)
-        .select_related('category')
+        .select_related('category', 'location')
         .prefetch_related('photos')
         .annotate(interest_count=Count('interests'))
         .order_by('-created_at')[:10]
@@ -207,12 +209,15 @@ def dismiss_welcome_disclaimer_view(request):
 def browse_assets_view(request):
     user = request.user
     category_id = request.GET.get('category')
+    location_id = request.GET.get('location')
     search = (request.GET.get('search') or '').strip()
     status_filter = request.GET.get('status', 'available')
 
-    assets = Asset.objects.select_related('category', 'assigned_to').prefetch_related('photos').annotate(interest_count=Count('interests'))
+    assets = Asset.objects.select_related('category', 'location', 'assigned_to').prefetch_related('photos').annotate(interest_count=Count('interests'))
     if category_id:
         assets = assets.filter(category_id=category_id)
+    if location_id:
+        assets = assets.filter(location_id=location_id)
     if search:
         assets = assets.filter(Q(name__icontains=search) | Q(description__icontains=search))
     if status_filter and status_filter != 'all':
@@ -231,7 +236,9 @@ def browse_assets_view(request):
     return render(request, 'browse_assets.html', {
         'assets': paginator.get_page(page),
         'categories': Category.objects.annotate(asset_count=Count('assets')),
+        'locations': Location.objects.annotate(asset_count=Count('assets')),
         'selected_category': category_id,
+        'selected_location': location_id,
         'search': search,
         'status_filter': status_filter,
         'my_interest_asset_ids': my_interest_asset_ids,
@@ -242,7 +249,7 @@ def browse_assets_view(request):
 @login_required
 def asset_detail_view(request, asset_id):
     asset = get_object_or_404(
-        Asset.objects.select_related('category', 'assigned_to').prefetch_related('photos'),
+        Asset.objects.select_related('category', 'location', 'assigned_to').prefetch_related('photos'),
         pk=asset_id,
     )
     interest = Interest.objects.filter(user=request.user, asset=asset).first()
@@ -382,7 +389,7 @@ def my_interests_view(request):
     interests = (
         Interest.objects
         .filter(user=request.user)
-        .select_related('asset', 'asset__category')
+        .select_related('asset', 'asset__category', 'asset__location')
         .prefetch_related('asset__photos')
         .order_by('position')
     )
@@ -425,7 +432,7 @@ def reorder_interests_view(request):
 
 @login_required
 def my_items_view(request):
-    items = Asset.objects.filter(assigned_to=request.user).select_related('category').prefetch_related('photos')
+    items = Asset.objects.filter(assigned_to=request.user).select_related('category', 'location').prefetch_related('photos')
     return render(request, 'my_items.html', {'items': items})
 
 
@@ -448,6 +455,7 @@ def upload_asset_view(request):
     return render(request, 'upload_asset.html', {
         'form': form,
         'categories': Category.objects.all(),
+        'locations': Location.objects.all(),
     })
 
 
@@ -478,14 +486,17 @@ def admin_panel_view(request):
 
 @admin_required
 def admin_assets_view(request):
-    assets = Asset.objects.select_related('category', 'assigned_to').prefetch_related('photos').order_by('-created_at')
+    assets = Asset.objects.select_related('category', 'location', 'assigned_to').prefetch_related('photos').order_by('-created_at')
 
     category_id = request.GET.get('category')
+    location_id = request.GET.get('location')
     status = request.GET.get('status')
     search = (request.GET.get('search') or '').strip()
 
     if category_id:
         assets = assets.filter(category_id=category_id)
+    if location_id:
+        assets = assets.filter(location_id=location_id)
     if status:
         assets = assets.filter(status=status)
     if search:
@@ -509,9 +520,11 @@ def admin_assets_view(request):
     return render(request, 'admin/assets.html', {
         'assets': page,
         'categories': Category.objects.all(),
+        'locations': Location.objects.all(),
         'branches': Branch.objects.prefetch_related('users__user').all(),
         'asset_interests_json': json.dumps(asset_interests),
         'selected_category': category_id,
+        'selected_location': location_id,
         'selected_status': status,
         'search': search,
     })
@@ -534,6 +547,7 @@ def admin_add_asset_view(request):
     return render(request, 'admin/asset_form.html', {
         'form': form,
         'categories': Category.objects.all(),
+        'locations': Location.objects.all(),
     })
 
 
@@ -555,6 +569,7 @@ def admin_edit_asset_view(request, asset_id):
         'form': form,
         'asset': asset,
         'categories': Category.objects.all(),
+        'locations': Location.objects.all(),
         'photos': asset.photos.all(),
     })
 
@@ -604,6 +619,32 @@ def admin_delete_category_view(request, category_id):
 
 
 @admin_required
+def admin_locations_view(request):
+    locations = Location.objects.annotate(asset_count=Count('assets')).order_by('display_order', 'name')
+    if request.method == 'POST':
+        form = LocationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Location added!')
+            return redirect('admin_locations')
+    else:
+        form = LocationForm()
+    return render(request, 'admin/locations.html', {'locations': locations, 'form': form})
+
+
+@admin_required
+@require_POST
+def admin_delete_location_view(request, location_id):
+    location = get_object_or_404(Location, pk=location_id)
+    if location.assets.exists():
+        messages.error(request, 'Cannot delete location with existing assets.')
+    else:
+        location.delete()
+        messages.success(request, 'Location deleted.')
+    return redirect('admin_locations')
+
+
+@admin_required
 def admin_interests_view(request):
     view_by = request.GET.get('view', 'item')
     if view_by == 'person':
@@ -611,7 +652,7 @@ def admin_interests_view(request):
             User.objects
             .filter(profile__isnull=False)
             .select_related('profile', 'profile__branch')
-            .prefetch_related('interests__asset', 'interests__asset__category')
+            .prefetch_related('interests__asset', 'interests__asset__category', 'interests__asset__location')
             .annotate(interest_count=Count('interests'))
             .order_by('profile__branch__display_order', 'username')
         )
@@ -620,6 +661,7 @@ def admin_interests_view(request):
     assets = (
         Asset.objects
         .filter(status='available')
+        .select_related('category', 'location')
         .prefetch_related('interests__user')
         .annotate(interest_count=Count('interests'))
         .filter(interest_count__gt=0)
@@ -747,6 +789,13 @@ def admin_reports_view(request):
         sold=Count('assets', filter=Q(assets__status='sold')),
         donated=Count('assets', filter=Q(assets__status='donated')),
     )
+    locations = Location.objects.annotate(
+        total=Count('assets'),
+        available=Count('assets', filter=Q(assets__status='available')),
+        claimed=Count('assets', filter=Q(assets__status='claimed')),
+        sold=Count('assets', filter=Q(assets__status='sold')),
+        donated=Count('assets', filter=Q(assets__status='donated')),
+    )
     users = (
         User.objects
         .select_related('profile', 'profile__branch')
@@ -755,6 +804,7 @@ def admin_reports_view(request):
     )
     return render(request, 'admin/reports.html', {
         'categories': categories,
+        'locations': locations,
         'users': users,
     })
 
@@ -764,7 +814,7 @@ def admin_export_csv_view(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="distribution_report.csv"'
     writer = csv.writer(response)
-    writer.writerow(['Item #', 'Asset', 'Category', 'Status', 'Assigned To', 'Assigned By', 'Assigned On', 'Branch'])
+    writer.writerow(['Item #', 'Asset', 'Category', 'Location', 'Status', 'Assigned To', 'Assigned By', 'Assigned On', 'Branch'])
 
     latest_assign = AssignmentEvent.objects.filter(
         asset=OuterRef('pk'),
@@ -773,7 +823,7 @@ def admin_export_csv_view(request):
 
     qs = (
         Asset.objects
-        .select_related('category', 'assigned_to', 'assigned_to__profile', 'assigned_to__profile__branch')
+        .select_related('category', 'location', 'assigned_to', 'assigned_to__profile', 'assigned_to__profile__branch')
         .annotate(
             assigned_by_username=Subquery(latest_assign.values('actor__username')[:1]),
             assigned_on_date=Subquery(latest_assign.values('created_at')[:1]),
@@ -790,6 +840,7 @@ def admin_export_csv_view(request):
             asset.serial_number,
             asset.name,
             asset.category.name,
+            asset.location.name,
             asset.get_status_display(),
             username,
             assigned_by,
@@ -804,7 +855,7 @@ def admin_history_view(request):
     """Chronological log of assignment events; filterable by asset and user."""
     events = (
         AssignmentEvent.objects
-        .select_related('actor', 'asset', 'asset__category', 'from_user', 'to_user')
+        .select_related('actor', 'asset', 'asset__category', 'asset__location', 'from_user', 'to_user')
         .order_by('-created_at')
     )
     asset_id = request.GET.get('asset')

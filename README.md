@@ -45,7 +45,7 @@ cp .env.example .env
 # Edit .env — at minimum set DJANGO_SECRET_KEY.
 # Email settings are optional; without them, password-reset emails print to console.
 
-# 4. Run migrations and seed branches + categories
+# 4. Run migrations and seed branches, categories, and locations
 python manage.py migrate
 python manage.py setup_initial_data
 
@@ -105,8 +105,10 @@ remains at `/django-admin/`.)
 - **Assets** — full CRUD plus a quick-assign modal. Assigning an item triggers an
   email notification to the recipient (if email is configured).
 - **Categories** — add/rename/delete (cannot delete a category that has items).
+- **Locations** — add/delete household rooms and storage areas (cannot delete a
+  location that has items).
 - **Interests** — view interest by item or by person.
-- **Reports** — totals per category and per user; CSV export.
+- **Reports** — totals per category, per location, and per user; CSV export.
 
 ---
 
@@ -159,11 +161,11 @@ See [`.env.example`](.env.example) for the full list. The important ones:
 ```
 asset_distribution/        Django settings, root URLconf
 core/                      The single app (models, views, forms, admin)
-  models.py                Branch, UserProfile, Category, Asset, AssetPhoto, Interest
+  models.py                Branch, UserProfile, Category, Location, Asset, AssetPhoto, Interest
   views.py                 All views (auth + browsing + admin panel)
   email.py                 Best-effort send helpers
   management/commands/
-    setup_initial_data.py  Branches, categories, optional bootstrap superuser
+    setup_initial_data.py  Branches, categories, locations, optional bootstrap superuser
 templates/
   base.html, login.html, signup.html, dashboard.html, ...
   admin/                   Admin panel templates
@@ -176,7 +178,7 @@ templates/
 ## Data model in one paragraph
 
 Each Django `User` has a `UserProfile` pointing at one `Branch`. `Asset`s belong to
-a `Category` and may be `assigned_to` a `User`. `Interest` links a user to an asset
+a `Category` and a `Location`, and may be `assigned_to` a `User`. `Interest` links a user to an asset
 with a strict positive integer `position`; `(user, position)` and `(user, asset)`
 are both unique, so you can never have ties or duplicate interests. There is no
 turn-based state and no separate "family member" record — the admin simply assigns

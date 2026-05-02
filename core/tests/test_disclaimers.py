@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from core.models import Asset, Branch, Category, DisclaimerMessage, Interest, UserProfile
+from core.models import Asset, Branch, Category, DisclaimerMessage, Interest, Location, UserProfile
 
 
 def _make_user(username='alice', branch=None, is_staff=False):
@@ -71,7 +71,8 @@ class ToggleInterestConfirmationTests(TestCase):
         self.user = _make_user(branch=self.branch)
         self.client.force_login(self.user)
         self.cat = Category.objects.create(name='Cat')
-        self.asset = Asset.objects.create(name='Lamp', category=self.cat)
+        self.location, _ = Location.objects.get_or_create(name='Kitchen')
+        self.asset = Asset.objects.create(name='Lamp', category=self.cat, location=self.location)
 
     def _toggle(self, **post):
         return self.client.post(

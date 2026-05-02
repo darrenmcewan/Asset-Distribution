@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
 
-{% block title %}Categories - Admin{% endblock %}
+{% block title %}Locations - Admin{% endblock %}
 
 {% block content %}
-<h1>Manage Categories</h1>
+<h1>Manage Locations</h1>
 
 <nav class="admin-nav">
     <a href="{% url 'admin_panel' %}">Dashboard</a>
     <a href="{% url 'admin_users' %}">Users</a>
     <a href="{% url 'admin_assets' %}">Assets</a>
-    <a href="{% url 'admin_categories' %}" class="active">Categories</a>
-    <a href="{% url 'admin_locations' %}">Locations</a>
+    <a href="{% url 'admin_categories' %}">Categories</a>
+    <a href="{% url 'admin_locations' %}" class="active">Locations</a>
     <a href="{% url 'admin_interests' %}">Interests</a>
     <a href="{% url 'admin_history' %}">History</a>
     <a href="{% url 'admin_reports' %}">Reports</a>
@@ -18,10 +18,9 @@
 </nav>
 
 <div style="display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem;">
-    <!-- Categories List -->
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">All Categories</h3>
+            <h3 class="card-title">All Locations</h3>
         </div>
         <table class="table">
             <thead>
@@ -33,15 +32,15 @@
                 </tr>
             </thead>
             <tbody>
-                {% for category in categories %}
+                {% for location in locations %}
                 <tr>
-                    <td>{{ category.display_order }}</td>
-                    <td>{{ category.name }}</td>
-                    <td>{{ category.asset_count }}</td>
+                    <td>{{ location.display_order }}</td>
+                    <td>{{ location.name }}</td>
+                    <td>{{ location.asset_count }}</td>
                     <td>
-                        {% if category.asset_count == 0 %}
-                        <form method="post" action="{% url 'admin_delete_category' category.id %}" 
-                              onsubmit="return confirm('Delete {{ category.name }}?')" style="display: inline;">
+                        {% if location.asset_count == 0 %}
+                        <form method="post" action="{% url 'admin_delete_location' location.id %}"
+                              onsubmit="return confirm('Delete {{ location.name }}?')" style="display: inline;">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                         </form>
@@ -52,17 +51,16 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center text-muted">No categories yet</td>
+                    <td colspan="4" class="text-center text-muted">No locations yet</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    
-    <!-- Add Category Form -->
+
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Add Category</h3>
+            <h3 class="card-title">Add Location</h3>
         </div>
         <form method="post">
             {% csrf_token %}
@@ -75,7 +73,7 @@
                 {{ form.display_order }}
                 <p class="form-help">Lower numbers appear first</p>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">Add Category</button>
+            <button type="submit" class="btn btn-primary btn-block">Add Location</button>
         </form>
     </div>
 </div>

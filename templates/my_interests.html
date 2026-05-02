@@ -7,7 +7,7 @@
 {% if interests %}
 <div class="card">
     <table class="table">
-        <thead><tr><th style="width: 60px;">#</th><th>Item</th><th>Category</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th style="width: 60px;">#</th><th>Item</th><th>Category</th><th>Location</th><th>Status</th><th></th></tr></thead>
         <tbody id="interest-list">
             {% for interest in interests %}
             <tr data-interest-id="{{ interest.id }}" {% if interest.asset.status != 'available' %}style="opacity: 0.6;"{% endif %}>
@@ -19,6 +19,7 @@
                     <a href="{% url 'asset_detail' interest.asset.id %}">{{ interest.asset.name }}</a>
                 </td>
                 <td>{{ interest.asset.category.name }}</td>
+                <td>{{ interest.asset.location.name }}</td>
                 <td>
                     <span class="badge badge-{{ interest.asset.status }}">{{ interest.asset.get_status_display }}</span>
                     {% if interest.asset.status == 'claimed' and interest.asset.assigned_to %}<br><span class="text-muted" style="font-size: 0.75rem;">→ {{ interest.asset.assigned_to.username }}</span>{% endif %}

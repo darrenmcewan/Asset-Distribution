@@ -39,6 +39,17 @@
             {{ form.new_category }}
         </div>
     </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+            <label class="form-label">Existing Location</label>
+            {{ form.location }}
+        </div>
+        <div class="form-group">
+            <label class="form-label">Or New Location</label>
+            {{ form.new_location }}
+        </div>
+    </div>
     
     <div class="form-group">
         <label class="form-label">Condition</label>

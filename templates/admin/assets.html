@@ -11,6 +11,7 @@
     <a href="{% url 'admin_users' %}">Users</a>
     <a href="{% url 'admin_assets' %}" class="active">Assets</a>
     <a href="{% url 'admin_categories' %}">Categories</a>
+    <a href="{% url 'admin_locations' %}">Locations</a>
     <a href="{% url 'admin_interests' %}">Interests</a>
     <a href="{% url 'admin_history' %}">History</a>
     <a href="{% url 'admin_reports' %}">Reports</a>
@@ -44,6 +45,15 @@
         </select>
     </div>
     <div class="filter-group">
+        <label>Location:</label>
+        <select name="location" onchange="this.form.submit()">
+            <option value="">All Locations</option>
+            {% for loc in locations %}
+            <option value="{{ loc.id }}" {% if selected_location == loc.id|stringformat:"s" %}selected{% endif %}>{{ loc.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
         <label>Search:</label>
         <input type="text" name="search" value="{{ search }}" placeholder="Search...">
         <button type="submit" class="btn btn-sm btn-secondary">Search</button>
@@ -60,6 +70,7 @@
                     <th>Photo</th>
                     <th>Name</th>
                     <th>Category</th>
+                    <th>Location</th>
                     <th>Status</th>
                     <th>Assigned To</th>
                     <th>Interests</th>
@@ -83,6 +94,7 @@
                         <a href="{% url 'asset_detail' asset.id %}">{{ asset.name }}</a>
                     </td>
                     <td>{{ asset.category.name }}</td>
+                    <td>{{ asset.location.name }}</td>
                     <td>
                         <span class="badge badge-{{ asset.status }}">{{ asset.get_status_display }}</span>
                     </td>
@@ -111,7 +123,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center text-muted">No assets found</td>
+                    <td colspan="9" class="text-center text-muted">No assets found</td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -7,7 +7,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 
-from .models import Asset, AssetComment, Category, Branch, DisclaimerMessage, UserProfile
+from .models import Asset, AssetComment, Category, Branch, DisclaimerMessage, Location, UserProfile
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -128,14 +128,23 @@ class AssetForm(forms.ModelForm):
         }),
         label='New Category',
     )
+    new_location = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Or enter new location name',
+        }),
+        label='New Location',
+    )
 
     class Meta:
         model = Asset
-        fields = ['name', 'description', 'category', 'condition', 'notes']
+        fields = ['name', 'description', 'category', 'location', 'condition', 'notes']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Item name'}),
             'description': forms.Textarea(attrs={'class': 'form-textarea', 'rows': 4}),
             'category': forms.Select(attrs={'class': 'form-select'}),
+            'location': forms.Select(attrs={'class': 'form-select'}),
             'condition': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'e.g., Excellent, Good, Fair'}),
             'notes': forms.Textarea(attrs={'class': 'form-textarea', 'rows': 3}),
         }
@@ -144,11 +153,15 @@ class AssetForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['category'].required = False
         self.fields['category'].empty_label = 'Select existing category...'
+        self.fields['location'].required = False
+        self.fields['location'].empty_label = 'Select existing location...'
 
     def clean(self):
         cleaned = super().clean()
         category = cleaned.get('category')
         new_category = (cleaned.get('new_category') or '').strip()
+        location = cleaned.get('location')
+        new_location = (cleaned.get('new_location') or '').strip()
         if not category and not new_category:
             raise forms.ValidationError('Please select an existing category or enter a new one.')
         if new_category:
@@ -157,6 +170,14 @@ class AssetForm(forms.ModelForm):
                 defaults={'name': new_category},
             )
             cleaned['category'] = cat
+        if not location and not new_location:
+            raise forms.ValidationError('Please select an existing location or enter a new one.')
+        if new_location:
+            loc, _ = Location.objects.get_or_create(
+                name__iexact=new_location,
+                defaults={'name': new_location},
+            )
+            cleaned['location'] = loc
         return cleaned
 
 
@@ -166,6 +187,16 @@ class CategoryForm(forms.ModelForm):
         fields = ['name', 'display_order']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Category name'}),
+            'display_order': forms.NumberInput(attrs={'class': 'form-input', 'style': 'width: 80px;'}),
+        }
+
+
+class LocationForm(forms.ModelForm):
+    class Meta:
+        model = Location
+        fields = ['name', 'display_order']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Location name'}),
             'display_order': forms.NumberInput(attrs={'class': 'form-input', 'style': 'width: 80px;'}),
         }
 
