@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Upload Asset - Asset Distribution{% endblock %}
 
@@ -71,11 +72,7 @@
         <p class="form-help">Any special history, memories, or information about this item</p>
     </div>
     
-    <div class="form-group">
-        <label class="form-label">Photos</label>
-        <input type="file" name="photos" multiple accept="image/*" class="form-input">
-        <p class="form-help">You can select multiple photos at once</p>
-    </div>
+    {% include 'includes/photo_uploader.html' %}
     
     <div class="flex gap-2">
         <button type="submit" class="btn btn-primary btn-lg">Upload Asset</button>
@@ -83,4 +80,8 @@
     </div>
 </form>
 
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/clipboard-photos.js' %}?v=clipboard-photos-1"></script>
 {% endblock %}

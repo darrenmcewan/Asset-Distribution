@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{% if asset %}Edit{% else %}Add{% endif %} Asset - Admin{% endblock %}
 
@@ -97,10 +98,7 @@
     {% endif %}
     {% endif %}
     
-    <div class="form-group">
-        <label class="form-label">{% if asset %}Add More Photos{% else %}Photos{% endif %}</label>
-        <input type="file" name="photos" multiple accept="image/*" class="form-input">
-    </div>
+    {% include 'includes/photo_uploader.html' %}
     
     <div class="flex gap-2">
         <button type="submit" class="btn btn-primary btn-lg">{% if asset %}Update{% else %}Add{% endif %} Asset</button>
@@ -132,6 +130,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/clipboard-photos.js' %}?v=clipboard-photos-1"></script>
 <script>
 function deletePhoto(photoId) {
     if (confirm('Delete this photo?')) {

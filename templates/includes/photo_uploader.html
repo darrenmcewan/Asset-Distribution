@@ -1,0 +1,10 @@
+<div class="form-group clipboard-photo-uploader" data-clipboard-photo-uploader>
+    <label class="form-label">{% if asset %}Add More Photos{% else %}Photos{% endif %}</label>
+    <input type="file" name="photos" multiple accept="image/*" class="form-input" data-photo-input>
+    <div class="clipboard-photo-dropzone" tabindex="0" data-photo-dropzone>
+        <div class="clipboard-photo-dropzone-title">Paste images here</div>
+        <div class="clipboard-photo-dropzone-text">Copy an image, then press Command+V or Ctrl+V. You can also select files above.</div>
+    </div>
+    <p class="form-help clipboard-photo-status" data-photo-status>You can select multiple photos at once.</p>
+    <div class="clipboard-photo-preview" data-photo-preview hidden></div>
+</div>
