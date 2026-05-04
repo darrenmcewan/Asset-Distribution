@@ -68,10 +68,28 @@
         <label class="form-label">Existing Photos</label>
         <div class="photo-gallery">
             {% for photo in photos %}
-            <div style="position: relative;">
+            <div class="asset-photo-card">
                 <img src="{{ photo.image.url }}" alt="">
+                {% if forloop.first %}
+                <span class="photo-primary-badge">Main photo</span>
+                {% else %}
+                <div class="photo-actions">
+                    <button type="button" class="btn btn-sm btn-primary"
+                            onclick="makePrimaryPhoto({{ photo.id }})">Make main</button>
+                    <div class="photo-order-controls">
+                        {% if forloop.counter > 2 %}
+                        <button type="button" class="btn btn-sm btn-secondary"
+                                onclick="reorderSecondaryPhoto({{ photo.id }}, 'earlier')">Earlier</button>
+                        {% endif %}
+                        {% if not forloop.last %}
+                        <button type="button" class="btn btn-sm btn-secondary"
+                                onclick="reorderSecondaryPhoto({{ photo.id }}, 'later')">Later</button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
                 <button type="button" onclick="deletePhoto({{ photo.id }})" 
-                        style="position: absolute; top: 4px; right: 4px; background: var(--color-danger); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">×</button>
+                        class="photo-delete-btn">×</button>
             </div>
             {% endfor %}
         </div>
@@ -129,6 +147,38 @@ function deletePhoto(photoId) {
             }
         });
     }
+}
+
+function makePrimaryPhoto(photoId) {
+    fetch(`/admin-panel/photos/${photoId}/primary/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    }).then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function reorderSecondaryPhoto(photoId, direction) {
+    var data = new FormData();
+    data.append('direction', direction);
+
+    fetch(`/admin-panel/photos/${photoId}/reorder/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: data
+    }).then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
 }
 </script>
 {% endblock %}

@@ -593,6 +593,62 @@ def admin_delete_photo_view(request, photo_id):
 
 
 @admin_required
+@require_POST
+def admin_make_primary_photo_view(request, photo_id):
+    photo = get_object_or_404(AssetPhoto.objects.select_related('asset'), pk=photo_id)
+
+    with transaction.atomic():
+        photos = list(
+            AssetPhoto.objects.select_for_update()
+            .filter(asset=photo.asset)
+            .order_by('upload_order', 'uploaded_at', 'pk')
+        )
+        reordered = [p for p in photos if p.pk == photo.pk] + [p for p in photos if p.pk != photo.pk]
+        for order, asset_photo in enumerate(reordered):
+            if asset_photo.upload_order != order:
+                AssetPhoto.objects.filter(pk=asset_photo.pk).update(upload_order=order)
+
+    return JsonResponse({'success': True})
+
+
+@admin_required
+@require_POST
+def admin_reorder_secondary_photo_view(request, photo_id):
+    direction = request.POST.get('direction')
+    if direction not in {'earlier', 'later'}:
+        return JsonResponse({'success': False, 'error': 'Invalid direction.'}, status=400)
+
+    photo = get_object_or_404(AssetPhoto.objects.select_related('asset'), pk=photo_id)
+
+    with transaction.atomic():
+        photos = list(
+            AssetPhoto.objects.select_for_update()
+            .filter(asset=photo.asset)
+            .order_by('upload_order', 'uploaded_at', 'pk')
+        )
+        index = next((i for i, asset_photo in enumerate(photos) if asset_photo.pk == photo.pk), None)
+        if index is None:
+            return JsonResponse({'success': False, 'error': 'Photo not found.'}, status=404)
+        if index == 0:
+            return JsonResponse({'success': False, 'error': 'Use Make main to change the main photo.'}, status=400)
+
+        secondary_photos = photos[1:]
+        secondary_index = index - 1
+        target_index = secondary_index - 1 if direction == 'earlier' else secondary_index + 1
+        if 0 <= target_index < len(secondary_photos):
+            secondary_photos[secondary_index], secondary_photos[target_index] = (
+                secondary_photos[target_index],
+                secondary_photos[secondary_index],
+            )
+            reordered = [photos[0], *secondary_photos]
+            for order, asset_photo in enumerate(reordered):
+                if asset_photo.upload_order != order:
+                    AssetPhoto.objects.filter(pk=asset_photo.pk).update(upload_order=order)
+
+    return JsonResponse({'success': True})
+
+
+@admin_required
 def admin_categories_view(request):
     categories = Category.objects.annotate(asset_count=Count('assets')).order_by('display_order', 'name')
     if request.method == 'POST':
