@@ -53,6 +53,16 @@ class AdminAssetPhotoUploadTests(TestCase):
         self.assertContains(resp, 'Paste images here')
         self.assertContains(resp, 'clipboard-photos.js')
 
+    def test_admin_add_asset_form_includes_unsaved_details_guard(self):
+        self.client.force_login(self.staff)
+
+        resp = self.client.get(reverse('admin_add_asset'))
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'data-unsaved-asset-form')
+        self.assertContains(resp, 'Discard asset details?')
+        self.assertContains(resp, 'beforeunload')
+
     def test_staff_can_create_asset_with_photo_upload(self):
         self.client.force_login(self.staff)
 
@@ -119,6 +129,7 @@ class AdminAssetPhotoUploadTests(TestCase):
 
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'Clone Asset')
+        self.assertContains(resp, 'data-unsaved-asset-form')
         self.assertContains(resp, 'Photos, assignment, status, interests, comments, and history are not copied.')
         self.assertNotContains(resp, 'Existing Photos')
         self.assertNotContains(resp, 'source-photo.jpg')
@@ -199,6 +210,19 @@ class AdminAssetPhotoUploadTests(TestCase):
         resp = self.client.get(f"{reverse('admin_add_asset')}?clone=not-a-number")
 
         self.assertEqual(resp.status_code, 404)
+
+    def test_admin_edit_asset_form_does_not_enable_unsaved_add_guard(self):
+        self.client.force_login(self.staff)
+        asset = Asset.objects.create(
+            name='Chair',
+            category=self.category,
+            location=self.location,
+        )
+
+        resp = self.client.get(reverse('admin_edit_asset', args=[asset.id]))
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, 'data-unsaved-asset-form')
 
 
 class AdminPrimaryPhotoTests(TestCase):

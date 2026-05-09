@@ -10,7 +10,7 @@
 
 <h1>{% if asset %}Edit Asset{% elif clone_source %}Clone Asset{% else %}Add New Asset{% endif %}</h1>
 
-<form method="post" enctype="multipart/form-data" class="card">
+<form method="post" enctype="multipart/form-data" class="card"{% if not asset %} data-unsaved-asset-form data-unsaved-dirty-on-load="{{ form.is_bound|yesno:'true,false' }}"{% endif %}>
     {% csrf_token %}
 
     {% if clone_source %}
@@ -138,6 +138,110 @@
 {% block extra_js %}
 <script src="{% static 'js/clipboard-photos.js' %}?v=clipboard-photos-1"></script>
 <script>
+{% if not asset %}
+(function () {
+    var form = document.querySelector('[data-unsaved-asset-form]');
+    if (!form) return;
+
+    var submitting = false;
+    var dirtyOnLoad = form.dataset.unsavedDirtyOnLoad === 'true';
+    var initialSnapshot = snapshotForm();
+
+    function snapshotField(field) {
+        if (!field.name || field.disabled) return null;
+        if (['button', 'submit', 'reset'].indexOf(field.type) !== -1) return null;
+
+        if (field.type === 'file') {
+            return field.name + '=' + Array.from(field.files || []).map(function (file) {
+                return [file.name, file.size, file.lastModified].join(':');
+            }).join('|');
+        }
+
+        if (field.type === 'checkbox' || field.type === 'radio') {
+            return field.name + '=' + (field.checked ? '1' : '0');
+        }
+
+        if (field.tagName === 'SELECT' && field.multiple) {
+            return field.name + '=' + Array.from(field.options).filter(function (option) {
+                return option.selected;
+            }).map(function (option) {
+                return option.value;
+            }).join('|');
+        }
+
+        return field.name + '=' + field.value;
+    }
+
+    function snapshotForm() {
+        return Array.from(form.elements).map(snapshotField).filter(function (value) {
+            return value !== null;
+        }).join('&');
+    }
+
+    function hasUnsavedChanges() {
+        return dirtyOnLoad || snapshotForm() !== initialSnapshot;
+    }
+
+    function shouldWarn() {
+        return !submitting && hasUnsavedChanges();
+    }
+
+    function showLeavePrompt(onLeave) {
+        var title = 'Discard asset details?';
+        var body = 'You have unsaved asset details. If you leave this page, those details will be lost.';
+
+        if (!window.Disclaimer) {
+            if (confirm(title + '\n\n' + body)) onLeave();
+            return;
+        }
+
+        var html =
+            '<h2 class="disclaimer-modal__title">' + window.Disclaimer.escapeHtml(title) + '</h2>' +
+            '<div class="disclaimer-modal__body"><p>' + window.Disclaimer.escapeHtml(body) + '</p></div>' +
+            '<div class="disclaimer-modal__footer">' +
+                '<button type="button" class="btn btn-secondary" id="asset-unsaved-stay-btn">Stay</button>' +
+                '<button type="button" class="btn btn-primary" id="asset-unsaved-leave-btn">Leave</button>' +
+            '</div>';
+
+        window.Disclaimer.show(html, { allowBackdropClose: false });
+        document.getElementById('asset-unsaved-stay-btn').addEventListener('click', function () {
+            window.Disclaimer.hide();
+        });
+        document.getElementById('asset-unsaved-leave-btn').addEventListener('click', function () {
+            submitting = true;
+            window.Disclaimer.hide();
+            onLeave();
+        });
+    }
+
+    form.addEventListener('submit', function () {
+        submitting = true;
+    });
+
+    window.addEventListener('beforeunload', function (event) {
+        if (!shouldWarn()) return;
+        event.preventDefault();
+        event.returnValue = '';
+    });
+
+    document.addEventListener('click', function (event) {
+        var link = event.target.closest('a[href]');
+        if (!link || !shouldWarn()) return;
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        if (link.target && link.target !== '_self') return;
+        if (link.hasAttribute('download')) return;
+
+        var href = link.getAttribute('href');
+        if (!href || href.charAt(0) === '#') return;
+
+        event.preventDefault();
+        showLeavePrompt(function () {
+            window.location.href = link.href;
+        });
+    });
+})();
+{% endif %}
+
 function deletePhoto(photoId) {
     if (confirm('Delete this photo?')) {
         fetch(`/admin-panel/photos/${photoId}/delete/`, {
