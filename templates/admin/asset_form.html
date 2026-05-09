@@ -4,14 +4,18 @@
 {% block title %}{% if asset %}Edit{% elif clone_source %}Clone{% else %}Add{% endif %} Asset - Admin{% endblock %}
 
 {% block content %}
+{% url 'admin_assets' as admin_assets_url %}
 <div class="mb-2">
-    <a href="{% url 'admin_assets' %}" class="text-light">← Back to Assets</a>
+    <a href="{{ admin_assets_return_url|default:admin_assets_url }}" class="text-light">← Back to Assets</a>
 </div>
 
 <h1>{% if asset %}Edit Asset{% elif clone_source %}Clone Asset{% else %}Add New Asset{% endif %}</h1>
 
 <form method="post" enctype="multipart/form-data" class="card"{% if not asset %} data-unsaved-asset-form data-unsaved-dirty-on-load="{{ form.is_bound|yesno:'true,false' }}"{% endif %}>
     {% csrf_token %}
+    {% if asset and admin_assets_return_url %}
+    <input type="hidden" name="next" value="{{ admin_assets_return_url }}">
+    {% endif %}
 
     {% if clone_source %}
     <div class="alert alert-info">
@@ -108,7 +112,7 @@
     
     <div class="flex gap-2">
         <button type="submit" class="btn btn-primary btn-lg">{% if asset %}Update Asset{% elif clone_source %}Add Cloned Asset{% else %}Add Asset{% endif %}</button>
-        <a href="{% url 'admin_assets' %}" class="btn btn-secondary btn-lg">Cancel</a>
+        <a href="{{ admin_assets_return_url|default:admin_assets_url }}" class="btn btn-secondary btn-lg">Cancel</a>
     </div>
 </form>
 

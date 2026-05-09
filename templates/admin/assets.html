@@ -111,7 +111,7 @@
                     <td>{{ asset.get_interest_count }}</td>
                     <td>
                         <div class="flex gap-1">
-                            <a href="{% url 'admin_edit_asset' asset.id %}" class="btn btn-sm btn-secondary">Edit</a>
+                            <a href="{% url 'admin_edit_asset' asset.id %}?next={{ admin_assets_return_url|urlencode }}%23admin-asset-{{ asset.id }}" class="btn btn-sm btn-secondary">Edit</a>
                             <a href="{% url 'admin_add_asset' %}?clone={{ asset.id }}" class="btn btn-sm btn-secondary">Clone</a>
                             {% if asset.status == 'available' %}
                             <button type="button" class="btn btn-sm btn-primary" 

@@ -3,6 +3,7 @@
 import shutil
 import tempfile
 from io import BytesIO
+from urllib.parse import quote
 
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -219,6 +220,24 @@ class AdminAssetPhotoUploadTests(TestCase):
         self.assertContains(resp, 'name="next" id="assignNext"')
         self.assertContains(resp, "window.location.pathname + window.location.search + '#admin-asset-' + assetId")
 
+    def test_admin_assets_edit_link_preserves_return_anchor(self):
+        self.client.force_login(self.staff)
+        asset = Asset.objects.create(
+            name='Lamp',
+            category=self.category,
+            location=self.location,
+        )
+        return_url = f'{reverse("admin_assets")}?page=2&search=Lamp'
+        expected_next = f'{quote(return_url, safe="/")}%23admin-asset-{asset.id}'
+
+        resp = self.client.get(return_url)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(
+            resp,
+            f'{reverse("admin_edit_asset", args=[asset.id])}?next={expected_next}',
+        )
+
     def test_admin_assets_list_uses_top_and_bottom_jump_pagination(self):
         self.client.force_login(self.staff)
         for i in range(21):
@@ -278,6 +297,67 @@ class AdminAssetPhotoUploadTests(TestCase):
 
         self.assertEqual(resp.status_code, 200)
         self.assertNotContains(resp, 'data-unsaved-asset-form')
+
+    def test_admin_edit_asset_form_preserves_return_url(self):
+        self.client.force_login(self.staff)
+        asset = Asset.objects.create(
+            name='Chair',
+            category=self.category,
+            location=self.location,
+        )
+        next_url = f'{reverse("admin_assets")}?page=2&search=Chair#admin-asset-{asset.id}'
+
+        resp = self.client.get(reverse('admin_edit_asset', args=[asset.id]), {'next': next_url})
+
+        self.assertEqual(resp.status_code, 200)
+        rendered_next_url = next_url.replace('&', '&amp;')
+        self.assertContains(resp, f'href="{rendered_next_url}"', count=2)
+        self.assertContains(resp, f'name="next" value="{rendered_next_url}"')
+
+    def test_admin_edit_asset_redirects_to_safe_next_url_after_save(self):
+        self.client.force_login(self.staff)
+        asset = Asset.objects.create(
+            name='Chair',
+            category=self.category,
+            location=self.location,
+        )
+        next_url = f'{reverse("admin_assets")}?page=2&search=Chair#admin-asset-{asset.id}'
+
+        resp = self.client.post(reverse('admin_edit_asset', args=[asset.id]), {
+            'name': 'Updated Chair',
+            'description': '',
+            'category': self.category.id,
+            'location': self.location.id,
+            'condition': '',
+            'notes': '',
+            'next': next_url,
+        })
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp['Location'], next_url)
+        asset.refresh_from_db()
+        self.assertEqual(asset.name, 'Updated Chair')
+
+    def test_admin_edit_asset_ignores_unsafe_next_url_after_save(self):
+        self.client.force_login(self.staff)
+        asset = Asset.objects.create(
+            name='Chair',
+            category=self.category,
+            location=self.location,
+        )
+
+        resp = self.client.post(reverse('admin_edit_asset', args=[asset.id]), {
+            'name': 'Updated Chair',
+            'description': '',
+            'category': self.category.id,
+            'location': self.location.id,
+            'condition': '',
+            'notes': '',
+            'next': 'https://example.com/admin-panel/assets/',
+        })
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp['Location'], reverse('admin_assets'))
 
     def test_admin_direct_assign_redirects_to_safe_next_url(self):
         self.client.force_login(self.staff)

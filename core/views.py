@@ -138,6 +138,16 @@ def _previous_login(request):
     return timezone.now() - timedelta(days=7)
 
 
+def _safe_next_url(request, next_url):
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return next_url
+    return ''
+
+
 # ============================================================================
 # User views
 # ============================================================================
@@ -524,6 +534,7 @@ def admin_assets_view(request):
         'locations': Location.objects.all(),
         'branches': Branch.objects.prefetch_related('users__user').all(),
         'asset_interests_json': json.dumps(asset_interests),
+        'admin_assets_return_url': request.get_full_path(),
         'selected_category': category_id,
         'selected_location': location_id,
         'selected_status': status,
@@ -574,6 +585,10 @@ def admin_add_asset_view(request):
 @admin_required
 def admin_edit_asset_view(request, asset_id):
     asset = get_object_or_404(Asset, pk=asset_id)
+    next_url = _safe_next_url(
+        request,
+        request.POST.get('next') if request.method == 'POST' else request.GET.get('next'),
+    )
     if request.method == 'POST':
         form = AssetForm(request.POST, instance=asset)
         if form.is_valid():
@@ -582,12 +597,13 @@ def admin_edit_asset_view(request, asset_id):
                 order = asset.photos.count() + i
                 AssetPhoto.objects.create(asset=asset, image=photo, upload_order=order)
             messages.success(request, f'Asset "{asset.name}" has been updated!')
-            return redirect('admin_assets')
+            return redirect(next_url or 'admin_assets')
     else:
         form = AssetForm(instance=asset)
     return render(request, 'admin/asset_form.html', {
         'form': form,
         'asset': asset,
+        'admin_assets_return_url': next_url or reverse('admin_assets'),
         'categories': Category.objects.all(),
         'locations': Location.objects.all(),
         'photos': asset.photos.all(),
@@ -774,12 +790,8 @@ def admin_direct_assign_view(request):
     send_assignment_notification(user, asset)
 
     messages.success(request, f'"{asset.name}" assigned to {user.username}.')
-    next_url = request.POST.get('next')
-    if next_url and url_has_allowed_host_and_scheme(
-        next_url,
-        allowed_hosts={request.get_host()},
-        require_https=request.is_secure(),
-    ):
+    next_url = _safe_next_url(request, request.POST.get('next'))
+    if next_url:
         return redirect(next_url)
     return redirect('admin_assets')
 
