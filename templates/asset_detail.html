@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="mb-2">
-    <a href="{% url 'browse_assets' %}{% if back_query %}?{{ back_query }}{% endif %}" class="text-light">← Back to Assets</a>
+    <a href="{% url 'browse_assets' %}{% if back_query %}?{{ back_query }}{% endif %}#asset-{{ asset.id }}" class="text-light">← Back to Assets</a>
 </div>
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">

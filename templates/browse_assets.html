@@ -61,7 +61,7 @@
 {% if assets %}
 <div class="asset-grid">
     {% for asset in assets %}
-    <div class="asset-card">
+    <div class="asset-card" id="asset-{{ asset.id }}">
         <a href="{% url 'asset_detail' asset.id %}{% if browse_query %}?back={{ browse_query|urlencode:'' }}{% endif %}">
             <div class="asset-card-image">
                 {% with asset.get_primary_photo as photo %}

@@ -606,12 +606,18 @@ html[data-theme="dark"] .badge-donated {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     overflow: hidden;
+    scroll-margin-top: 6rem;
     transition: box-shadow 0.15s ease;
 }
 
 .asset-card:hover {
     box-shadow: var(--shadow-md);
     border-color: rgba(54, 144, 87, 0.45);
+}
+
+.asset-card:target {
+    box-shadow: 0 0 0 3px var(--clan-blue-soft), var(--shadow-md);
+    border-color: var(--clan-blue);
 }
 
 .asset-card-image {

@@ -36,3 +36,4 @@ Thumbs.db
 *.pem
 openspec/
 .github/
+db.sqlite3
