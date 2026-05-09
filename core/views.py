@@ -224,6 +224,14 @@ def browse_assets_view(request):
     search = (request.GET.get('search') or '').strip()
     status_filter = request.GET.get('status', 'available')
 
+    ALLOWED_PER_PAGE = [12, 25, 50, 75, 100]
+    try:
+        per_page = int(request.GET.get('per_page', 12))
+    except (ValueError, TypeError):
+        per_page = 12
+    if per_page not in ALLOWED_PER_PAGE:
+        per_page = 12
+
     assets = Asset.objects.select_related('category', 'location', 'assigned_to').prefetch_related('photos').annotate(interest_count=Count('interests'))
     if category_id:
         assets = assets.filter(category_id=category_id)
@@ -238,7 +246,7 @@ def browse_assets_view(request):
         Interest.objects.filter(user=user).values_list('asset_id', flat=True)
     )
 
-    paginator = Paginator(assets, 12)
+    paginator = Paginator(assets, per_page)
     page = request.GET.get('page', 1)
 
     # Build the current browse query string for back-link preservation
@@ -254,6 +262,8 @@ def browse_assets_view(request):
         'status_filter': status_filter,
         'my_interest_asset_ids': my_interest_asset_ids,
         'browse_query': browse_params,
+        'per_page': per_page,
+        'per_page_choices': ALLOWED_PER_PAGE,
     })
 
 

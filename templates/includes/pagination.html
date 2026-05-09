@@ -1,7 +1,7 @@
 {% if assets.has_other_pages %}
 <div class="pagination {{ extra_class }}">
     {% if assets.has_previous %}
-    <a href="?page={{ assets.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_location %}&location={{ selected_location }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">← Previous</a>
+    <a href="?page={{ assets.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_location %}&location={{ selected_location }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}">← Previous</a>
     {% endif %}
 
     <span class="current">
@@ -17,7 +17,7 @@
     </span>
 
     {% if assets.has_next %}
-    <a href="?page={{ assets.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_location %}&location={{ selected_location }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Next →</a>
+    <a href="?page={{ assets.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_location %}&location={{ selected_location }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}">Next →</a>
     {% endif %}
 </div>
 {% endif %}
