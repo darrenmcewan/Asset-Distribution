@@ -204,6 +204,46 @@ class AdminAssetPhotoUploadTests(TestCase):
         self.assertContains(resp, f'{reverse("admin_add_asset")}?clone={asset.id}')
         self.assertContains(resp, 'Clone')
 
+    def test_admin_assets_list_uses_top_and_bottom_jump_pagination(self):
+        self.client.force_login(self.staff)
+        for i in range(21):
+            Asset.objects.create(
+                name=f'Chair {i:02d}',
+                category=self.category,
+                location=self.location,
+            )
+
+        resp = self.client.get(reverse('admin_assets'))
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'pagination--top', count=1)
+        self.assertContains(resp, 'class="page-input"', count=2)
+        self.assertContains(resp, 'onchange="goToPage(this)"', count=2)
+
+    def test_admin_assets_pagination_preserves_filters(self):
+        self.client.force_login(self.staff)
+        for i in range(21):
+            Asset.objects.create(
+                name=f'Filtered Lamp {i:02d}',
+                category=self.category,
+                location=self.location,
+                status='available',
+            )
+
+        resp = self.client.get(reverse('admin_assets'), {
+            'category': self.category.id,
+            'location': self.location.id,
+            'status': 'available',
+            'search': 'Filtered',
+        })
+
+        self.assertEqual(resp.status_code, 200)
+        expected_link = (
+            f'?page=2&category={self.category.id}&location={self.location.id}'
+            '&search=Filtered&status=available'
+        )
+        self.assertContains(resp, expected_link, count=2)
+
     def test_invalid_clone_id_returns_not_found(self):
         self.client.force_login(self.staff)
 

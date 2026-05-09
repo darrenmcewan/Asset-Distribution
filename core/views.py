@@ -526,6 +526,7 @@ def admin_assets_view(request):
         'selected_category': category_id,
         'selected_location': location_id,
         'selected_status': status,
+        'status_filter': status,
         'search': search,
     })
 
