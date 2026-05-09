@@ -23,6 +23,7 @@ from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 try:
@@ -773,7 +774,14 @@ def admin_direct_assign_view(request):
     send_assignment_notification(user, asset)
 
     messages.success(request, f'"{asset.name}" assigned to {user.username}.')
-    return redirect(request.POST.get('next') or 'admin_assets')
+    next_url = request.POST.get('next')
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(next_url)
+    return redirect('admin_assets')
 
 
 @admin_required

@@ -204,6 +204,21 @@ class AdminAssetPhotoUploadTests(TestCase):
         self.assertContains(resp, f'{reverse("admin_add_asset")}?clone={asset.id}')
         self.assertContains(resp, 'Clone')
 
+    def test_admin_assets_list_has_assignment_return_anchor_fields(self):
+        self.client.force_login(self.staff)
+        asset = Asset.objects.create(
+            name='Chair',
+            category=self.category,
+            location=self.location,
+        )
+
+        resp = self.client.get(reverse('admin_assets'))
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, f'id="admin-asset-{asset.id}"')
+        self.assertContains(resp, 'name="next" id="assignNext"')
+        self.assertContains(resp, "window.location.pathname + window.location.search + '#admin-asset-' + assetId")
+
     def test_admin_assets_list_uses_top_and_bottom_jump_pagination(self):
         self.client.force_login(self.staff)
         for i in range(21):
@@ -263,6 +278,49 @@ class AdminAssetPhotoUploadTests(TestCase):
 
         self.assertEqual(resp.status_code, 200)
         self.assertNotContains(resp, 'data-unsaved-asset-form')
+
+    def test_admin_direct_assign_redirects_to_safe_next_url(self):
+        self.client.force_login(self.staff)
+        asset = Asset.objects.create(
+            name='Lamp',
+            category=self.category,
+            location=self.location,
+        )
+        next_url = f'{reverse("admin_assets")}?page=2&search=Lamp#admin-asset-{asset.id}'
+
+        resp = self.client.post(reverse('admin_direct_assign'), {
+            'asset_id': asset.id,
+            'user_id': self.regular.id,
+            'next': next_url,
+        })
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp['Location'], next_url)
+        asset.refresh_from_db()
+        self.assertEqual(asset.status, 'claimed')
+        self.assertEqual(asset.assigned_to, self.regular)
+        self.assertTrue(AssignmentEvent.objects.filter(
+            asset=asset,
+            event_type='assign',
+            to_user=self.regular,
+        ).exists())
+
+    def test_admin_direct_assign_ignores_unsafe_next_url(self):
+        self.client.force_login(self.staff)
+        asset = Asset.objects.create(
+            name='Lamp',
+            category=self.category,
+            location=self.location,
+        )
+
+        resp = self.client.post(reverse('admin_direct_assign'), {
+            'asset_id': asset.id,
+            'user_id': self.regular.id,
+            'next': 'https://example.com/admin-panel/assets/',
+        })
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp['Location'], reverse('admin_assets'))
 
 
 class AdminPrimaryPhotoTests(TestCase):

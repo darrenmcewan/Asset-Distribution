@@ -82,7 +82,7 @@
             </thead>
             <tbody>
                 {% for asset in assets %}
-                <tr>
+                <tr id="admin-asset-{{ asset.id }}">
                     <td>{{ asset.serial_number }}</td>
                     <td style="width: 60px;">
                         {% with asset.get_primary_photo as photo %}
@@ -151,6 +151,7 @@
         <form method="post" action="{% url 'admin_direct_assign' %}">
             {% csrf_token %}
             <input type="hidden" name="asset_id" id="assignAssetId">
+            <input type="hidden" name="next" id="assignNext">
             <div class="form-group">
                 <label class="form-label">Assign to (interested users):</label>
                 <select name="user_id" id="assignUserSelect" class="form-select" required>
@@ -184,6 +185,7 @@ function goToPage(input) {
 
 function showAssignModal(assetId, assetName) {
     document.getElementById('assignAssetId').value = assetId;
+    document.getElementById('assignNext').value = window.location.pathname + window.location.search + '#admin-asset-' + assetId;
     document.getElementById('assignModalTitle').textContent = 'Assign: ' + assetName;
 
     var select = document.getElementById('assignUserSelect');
