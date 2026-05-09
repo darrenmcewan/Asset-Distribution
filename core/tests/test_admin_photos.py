@@ -11,7 +11,7 @@ from django.test import TestCase
 from django.urls import reverse
 from PIL import Image
 
-from core.models import Asset, AssetPhoto, Category, Location
+from core.models import Asset, AssetComment, AssetPhoto, AssignmentEvent, Category, Interest, Location
 
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp()
@@ -90,6 +90,115 @@ class AdminAssetPhotoUploadTests(TestCase):
 
         self.assertRedirects(resp, reverse('admin_assets'))
         self.assertEqual(asset.photos.count(), 1)
+
+    def test_staff_can_prefill_add_form_from_cloned_asset_without_photos(self):
+        self.client.force_login(self.staff)
+        source = Asset.objects.create(
+            name='Lamp',
+            description='Tall brass lamp',
+            category=self.category,
+            location=self.location,
+            condition='Good',
+            notes='Keep shade with base',
+            status='claimed',
+            assigned_to=self.regular,
+            created_by=self.staff,
+        )
+        AssetPhoto.objects.create(asset=source, image=_image_upload('source-photo.png'))
+        Interest.objects.create(user=self.regular, asset=source, position=1)
+        AssetComment.objects.create(asset=source, author=self.staff, body='Original comment')
+        AssignmentEvent.objects.create(
+            asset=source,
+            actor=self.staff,
+            event_type='assign',
+            to_user=self.regular,
+            to_status='claimed',
+        )
+
+        resp = self.client.get(f"{reverse('admin_add_asset')}?clone={source.id}")
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Clone Asset')
+        self.assertContains(resp, 'Photos, assignment, status, interests, comments, and history are not copied.')
+        self.assertNotContains(resp, 'Existing Photos')
+        self.assertNotContains(resp, 'source-photo.jpg')
+        form = resp.context['form']
+        self.assertEqual(form.initial['name'], source.name)
+        self.assertEqual(form.initial['description'], source.description)
+        self.assertEqual(form.initial['category'], self.category)
+        self.assertEqual(form.initial['location'], self.location)
+        self.assertEqual(form.initial['condition'], source.condition)
+        self.assertEqual(form.initial['notes'], source.notes)
+
+    def test_posting_cloned_form_creates_fresh_asset_record(self):
+        self.client.force_login(self.staff)
+        source = Asset.objects.create(
+            name='Lamp',
+            description='Tall brass lamp',
+            category=self.category,
+            location=self.location,
+            condition='Good',
+            notes='Keep shade with base',
+            status='claimed',
+            assigned_to=self.regular,
+            created_by=self.regular,
+        )
+        AssetPhoto.objects.create(asset=source, image=_image_upload('source-photo.png'))
+        Interest.objects.create(user=self.regular, asset=source, position=1)
+        AssetComment.objects.create(asset=source, author=self.staff, body='Original comment')
+        AssignmentEvent.objects.create(
+            asset=source,
+            actor=self.staff,
+            event_type='assign',
+            to_user=self.regular,
+            to_status='claimed',
+        )
+
+        resp = self.client.post(f"{reverse('admin_add_asset')}?clone={source.id}", {
+            'name': source.name,
+            'description': source.description,
+            'category': source.category_id,
+            'location': source.location_id,
+            'condition': source.condition,
+            'notes': source.notes,
+        })
+
+        self.assertRedirects(resp, reverse('admin_assets'))
+        cloned = Asset.objects.exclude(pk=source.pk).get(name=source.name)
+        self.assertNotEqual(cloned.serial_number, source.serial_number)
+        self.assertEqual(cloned.description, source.description)
+        self.assertEqual(cloned.category, source.category)
+        self.assertEqual(cloned.location, source.location)
+        self.assertEqual(cloned.condition, source.condition)
+        self.assertEqual(cloned.notes, source.notes)
+        self.assertEqual(cloned.status, 'available')
+        self.assertIsNone(cloned.assigned_to)
+        self.assertEqual(cloned.created_by, self.staff)
+        self.assertEqual(cloned.photos.count(), 0)
+        self.assertEqual(cloned.interests.count(), 0)
+        self.assertEqual(cloned.comments.count(), 0)
+        self.assertEqual(cloned.events.count(), 0)
+
+    def test_admin_assets_list_has_clone_link(self):
+        self.client.force_login(self.staff)
+        asset = Asset.objects.create(
+            name='Chair',
+            category=self.category,
+            location=self.location,
+        )
+
+        resp = self.client.get(reverse('admin_assets'))
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, f'{reverse("admin_add_asset")}?clone={asset.id}')
+        self.assertContains(resp, 'Clone')
+
+    def test_invalid_clone_id_returns_not_found(self):
+        self.client.force_login(self.staff)
+
+        resp = self.client.get(f"{reverse('admin_add_asset')}?clone=not-a-number")
+
+        self.assertEqual(resp.status_code, 404)
 
 
 class AdminPrimaryPhotoTests(TestCase):

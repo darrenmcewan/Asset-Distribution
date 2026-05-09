@@ -1,17 +1,23 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{% if asset %}Edit{% else %}Add{% endif %} Asset - Admin{% endblock %}
+{% block title %}{% if asset %}Edit{% elif clone_source %}Clone{% else %}Add{% endif %} Asset - Admin{% endblock %}
 
 {% block content %}
 <div class="mb-2">
     <a href="{% url 'admin_assets' %}" class="text-light">← Back to Assets</a>
 </div>
 
-<h1>{% if asset %}Edit Asset{% else %}Add New Asset{% endif %}</h1>
+<h1>{% if asset %}Edit Asset{% elif clone_source %}Clone Asset{% else %}Add New Asset{% endif %}</h1>
 
 <form method="post" enctype="multipart/form-data" class="card">
     {% csrf_token %}
+
+    {% if clone_source %}
+    <div class="alert alert-info">
+        Details were copied from {{ clone_source.name }}. Photos, assignment, status, interests, comments, and history are not copied.
+    </div>
+    {% endif %}
     
     {% if form.non_field_errors %}
     <div class="alert alert-error">
@@ -101,7 +107,7 @@
     {% include 'includes/photo_uploader.html' %}
     
     <div class="flex gap-2">
-        <button type="submit" class="btn btn-primary btn-lg">{% if asset %}Update{% else %}Add{% endif %} Asset</button>
+        <button type="submit" class="btn btn-primary btn-lg">{% if asset %}Update Asset{% elif clone_source %}Add Cloned Asset{% else %}Add Asset{% endif %}</button>
         <a href="{% url 'admin_assets' %}" class="btn btn-secondary btn-lg">Cancel</a>
     </div>
 </form>

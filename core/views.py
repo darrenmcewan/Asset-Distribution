@@ -532,6 +532,7 @@ def admin_assets_view(request):
 
 @admin_required
 def admin_add_asset_view(request):
+    clone_source = None
     if request.method == 'POST':
         form = AssetForm(request.POST)
         if form.is_valid():
@@ -543,9 +544,26 @@ def admin_add_asset_view(request):
             messages.success(request, f'Asset "{asset.name}" has been added!')
             return redirect('admin_assets')
     else:
-        form = AssetForm()
+        clone_id = request.GET.get('clone')
+        initial = None
+        if clone_id:
+            try:
+                clone_pk = int(clone_id)
+            except (TypeError, ValueError):
+                raise Http404('Asset not found')
+            clone_source = get_object_or_404(Asset, pk=clone_pk)
+            initial = {
+                'name': clone_source.name,
+                'description': clone_source.description,
+                'category': clone_source.category,
+                'location': clone_source.location,
+                'condition': clone_source.condition,
+                'notes': clone_source.notes,
+            }
+        form = AssetForm(initial=initial)
     return render(request, 'admin/asset_form.html', {
         'form': form,
+        'clone_source': clone_source,
         'categories': Category.objects.all(),
         'locations': Location.objects.all(),
     })
