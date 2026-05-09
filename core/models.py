@@ -158,6 +158,7 @@ class AssetPhoto(models.Model):
     def save(self, *args, **kwargs):
         if self.image and hasattr(self.image, 'read'):
             try:
+                self.image.seek(0)
                 img = Image.open(self.image)
 
                 # Strip EXIF by copying pixel data to a clean image
@@ -180,6 +181,7 @@ class AssetPhoto(models.Model):
                 )
             except Exception:
                 logger.exception('Failed to process image, saving original')
+                self.image.seek(0)
 
         super().save(*args, **kwargs)
 
