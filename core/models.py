@@ -156,10 +156,22 @@ class AssetPhoto(models.Model):
         return f"Photo for {self.asset.name}"
 
     def save(self, *args, **kwargs):
-        if self.image and hasattr(self.image, 'read'):
+        is_new_upload = (
+            self.image
+            and hasattr(self.image, '_committed')
+            and not self.image._committed
+        )
+        if is_new_upload:
+            # Read the entire file into memory upfront so we never depend
+            # on the FieldFile's internal state after PIL touches it.
+            self.image.open()
+            raw_data = self.image.read()
+            original_name = self.image.name
+
             try:
-                self.image.seek(0)
-                img = Image.open(self.image)
+                buf = BytesIO(raw_data)
+                img = Image.open(buf)
+                img.load()  # force full decode before we close buf
 
                 # Strip EXIF by copying pixel data to a clean image
                 clean = Image.new(img.mode, img.size)
@@ -175,13 +187,23 @@ class AssetPhoto(models.Model):
                 clean.save(buffer, format='JPEG', quality=self.JPEG_QUALITY, optimize=True)
                 buffer.seek(0)
 
-                name = self.image.name.rsplit('.', 1)[0] + '.jpg'
+                name = original_name.rsplit('.', 1)[0] + '.jpg'
                 self.image = InMemoryUploadedFile(
-                    buffer, 'image', name, 'image/jpeg', buffer.tell(), None,
+                    buffer, 'image', name, 'image/jpeg', buffer.getbuffer().nbytes, None,
                 )
             except Exception:
-                logger.exception('Failed to process image, saving original')
-                self.image.seek(0)
+                magic = raw_data[:16] if raw_data else b''
+                logger.exception(
+                    'Failed to process image (size=%d, magic=%s), saving original',
+                    len(raw_data), magic.hex(),
+                )
+                # Replace self.image with a fresh InMemoryUploadedFile from the
+                # raw bytes so we don't depend on the original file's state.
+                fallback_buf = BytesIO(raw_data)
+                content_type = 'image/png' if raw_data[:4] == b'\x89PNG' else 'application/octet-stream'
+                self.image = InMemoryUploadedFile(
+                    fallback_buf, 'image', original_name, content_type, len(raw_data), None,
+                )
 
         super().save(*args, **kwargs)
 
