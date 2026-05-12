@@ -216,6 +216,33 @@ def dismiss_welcome_disclaimer_view(request):
     return JsonResponse({'success': True})
 
 
+SORT_FIELD_MAP = {
+    'item': 'pk',
+    'name': 'name',
+    'category': 'category__name',
+    'location': 'location__name',
+}
+
+
+def _parse_sort_params(request):
+    """Return validated (sort_key, direction) or (None, None)."""
+    sort_key = request.GET.get('sort', '')
+    direction = request.GET.get('dir', '')
+    if sort_key not in SORT_FIELD_MAP or direction not in ('asc', 'desc'):
+        return None, None
+    return sort_key, direction
+
+
+def _apply_sort(queryset, sort_key, direction, default_ordering):
+    """Apply sort to queryset or fall back to default_ordering."""
+    if sort_key is None:
+        return queryset.order_by(*default_ordering) if default_ordering else queryset
+    field = SORT_FIELD_MAP[sort_key]
+    if direction == 'desc':
+        field = '-' + field
+    return queryset.order_by(field)
+
+
 @login_required
 def browse_assets_view(request):
     user = request.user
@@ -242,6 +269,10 @@ def browse_assets_view(request):
     if status_filter and status_filter != 'all':
         assets = assets.filter(status=status_filter)
 
+    sort_key, sort_dir = _parse_sort_params(request)
+    # Default ordering comes from model Meta: category__display_order, location__display_order, name
+    assets = _apply_sort(assets, sort_key, sort_dir, default_ordering=None)
+
     my_interest_asset_ids = set(
         Interest.objects.filter(user=user).values_list('asset_id', flat=True)
     )
@@ -264,6 +295,8 @@ def browse_assets_view(request):
         'browse_query': browse_params,
         'per_page': per_page,
         'per_page_choices': ALLOWED_PER_PAGE,
+        'current_sort': sort_key,
+        'current_dir': sort_dir,
     })
 
 
@@ -507,7 +540,7 @@ def admin_panel_view(request):
 
 @admin_required
 def admin_assets_view(request):
-    assets = Asset.objects.select_related('category', 'location', 'assigned_to').prefetch_related('photos').order_by('-created_at')
+    assets = Asset.objects.select_related('category', 'location', 'assigned_to').prefetch_related('photos')
 
     category_id = request.GET.get('category')
     location_id = request.GET.get('location')
@@ -530,6 +563,9 @@ def admin_assets_view(request):
         assets = assets.filter(status=status)
     if search:
         assets = assets.filter(Q(name__icontains=search) | Q(description__icontains=search))
+
+    sort_key, sort_dir = _parse_sort_params(request)
+    assets = _apply_sort(assets, sort_key, sort_dir, default_ordering=['-created_at'])
 
     paginator = Paginator(assets, per_page)
     page = paginator.get_page(request.GET.get('page', 1))
@@ -560,6 +596,8 @@ def admin_assets_view(request):
         'search': search,
         'per_page': per_page,
         'per_page_choices': ALLOWED_PER_PAGE,
+        'current_sort': sort_key,
+        'current_dir': sort_dir,
     })
 
 

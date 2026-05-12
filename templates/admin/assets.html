@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% load querystring_tags %}
+
 {% block title %}Manage Assets - Admin{% endblock %}
 
 {% block content %}
@@ -25,6 +27,7 @@
 
 <!-- Filters -->
 <form method="get" class="filter-bar">
+    {% if current_sort %}<input type="hidden" name="sort" value="{{ current_sort }}"><input type="hidden" name="dir" value="{{ current_dir }}">{% endif %}
     <div class="filter-group">
         <label>Category:</label>
         <select name="category" onchange="this.form.submit()">
@@ -77,11 +80,11 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>Item #</th>
+                    <th>{% include 'includes/sort_header.html' with sort_key='item' label='Item #' %}</th>
                     <th>Photo</th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Location</th>
+                    <th>{% include 'includes/sort_header.html' with sort_key='name' label='Name' %}</th>
+                    <th>{% include 'includes/sort_header.html' with sort_key='category' label='Category' %}</th>
+                    <th>{% include 'includes/sort_header.html' with sort_key='location' label='Location' %}</th>
                     <th>Status</th>
                     <th>Assigned To</th>
                     <th>Interests</th>

@@ -1,0 +1,22 @@
+{% comment %}
+Sort header include — renders a clickable <a> that toggles sort direction.
+
+Usage (table header):
+  <th>{% include 'includes/sort_header.html' with sort_key='name' label='Name' %}</th>
+
+Usage (sort bar):
+  {% include 'includes/sort_header.html' with sort_key='name' label='Name' tag='span' %}
+
+Context required:
+  current_sort  — active sort key or None
+  current_dir   — 'asc' or 'desc' or None
+{% endcomment %}{% spaceless %}
+{% load querystring_tags %}
+{% if current_sort == sort_key and current_dir == 'asc' %}
+<a href="?{% querystring sort=sort_key dir='desc' page='' %}" class="sort-header sort-asc" aria-sort="ascending">{{ label }}&nbsp;▲</a>
+{% elif current_sort == sort_key and current_dir == 'desc' %}
+<a href="?{% querystring sort='' dir='' page='' %}" class="sort-header sort-desc" aria-sort="descending">{{ label }}&nbsp;▼</a>
+{% else %}
+<a href="?{% querystring sort=sort_key dir='asc' page='' %}" class="sort-header">{{ label }}</a>
+{% endif %}
+{% endspaceless %}
