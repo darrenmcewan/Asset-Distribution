@@ -514,6 +514,14 @@ def admin_assets_view(request):
     status = request.GET.get('status')
     search = (request.GET.get('search') or '').strip()
 
+    ALLOWED_PER_PAGE = [12, 25, 50, 75, 100]
+    try:
+        per_page = int(request.GET.get('per_page', 25))
+    except (ValueError, TypeError):
+        per_page = 25
+    if per_page not in ALLOWED_PER_PAGE:
+        per_page = 25
+
     if category_id:
         assets = assets.filter(category_id=category_id)
     if location_id:
@@ -523,7 +531,7 @@ def admin_assets_view(request):
     if search:
         assets = assets.filter(Q(name__icontains=search) | Q(description__icontains=search))
 
-    paginator = Paginator(assets, 20)
+    paginator = Paginator(assets, per_page)
     page = paginator.get_page(request.GET.get('page', 1))
 
     # Build per-asset map of interested users for the assign modal
@@ -550,6 +558,8 @@ def admin_assets_view(request):
         'selected_status': status,
         'status_filter': status,
         'search': search,
+        'per_page': per_page,
+        'per_page_choices': ALLOWED_PER_PAGE,
     })
 
 

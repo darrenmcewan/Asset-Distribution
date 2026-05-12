@@ -58,6 +58,14 @@
         <input type="text" name="search" value="{{ search }}" placeholder="Search...">
         <button type="submit" class="btn btn-sm btn-secondary">Search</button>
     </div>
+    <div class="filter-group">
+        <label for="per_page">Per Page:</label>
+        <select name="per_page" id="per_page" class="form-select" onchange="this.form.submit()">
+            {% for choice in per_page_choices %}
+            <option value="{{ choice }}" {% if per_page == choice %}selected{% endif %}>{{ choice }}</option>
+            {% endfor %}
+        </select>
+    </div>
 </form>
 
 <!-- Top Pagination -->
