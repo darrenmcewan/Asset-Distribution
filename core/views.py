@@ -17,7 +17,8 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
-from django.db.models import Count, OuterRef, Q, Subquery
+from django.db.models import CharField, Count, OuterRef, Q, Subquery, Value
+from django.db.models.functions import Cast, LPad
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, redirect, render
@@ -538,6 +539,33 @@ def admin_panel_view(request):
     })
 
 
+def _build_serial_search_filter(search):
+    """Translate an admin search query into serial-number Q objects.
+
+    Strips an optional case-insensitive ``jbm-`` prefix and surrounding
+    whitespace. If the remainder is purely numeric, returns:
+      - a flag indicating the queryset should be annotated with
+        ``serial_digits`` (zero-padded pk as text), and
+      - a list of ``Q`` objects to OR into the existing search filter.
+
+    Returns ``(needs_annotation, q_objects)``.
+    """
+    if not search:
+        return False, []
+    candidate = search.strip()
+    if candidate.lower().startswith('jbm-'):
+        candidate = candidate[4:]
+    candidate = candidate.strip()
+    if not candidate or not candidate.isdigit():
+        return False, []
+    q_objects = [Q(serial_digits__contains=candidate)]
+    try:
+        q_objects.append(Q(pk=int(candidate)))
+    except ValueError:
+        pass
+    return True, q_objects
+
+
 @admin_required
 def admin_assets_view(request):
     assets = Asset.objects.select_related('category', 'location', 'assigned_to').prefetch_related('photos')
@@ -562,7 +590,19 @@ def admin_assets_view(request):
     if status:
         assets = assets.filter(status=status)
     if search:
-        assets = assets.filter(Q(name__icontains=search) | Q(description__icontains=search))
+        text_q = Q(name__icontains=search) | Q(description__icontains=search)
+        needs_annotation, serial_qs = _build_serial_search_filter(search)
+        if needs_annotation:
+            assets = assets.annotate(
+                serial_digits=LPad(
+                    Cast('pk', output_field=CharField()),
+                    3,
+                    Value('0'),
+                )
+            )
+            for sq in serial_qs:
+                text_q |= sq
+        assets = assets.filter(text_q)
 
     sort_key, sort_dir = _parse_sort_params(request)
     assets = _apply_sort(assets, sort_key, sort_dir, default_ordering=['-created_at'])
