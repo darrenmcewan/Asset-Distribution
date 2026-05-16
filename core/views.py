@@ -254,11 +254,11 @@ def browse_assets_view(request):
 
     ALLOWED_PER_PAGE = [12, 25, 50, 75, 100]
     try:
-        per_page = int(request.GET.get('per_page', 12))
+        per_page = int(request.GET.get('per_page', 25))
     except (ValueError, TypeError):
-        per_page = 12
+        per_page = 25
     if per_page not in ALLOWED_PER_PAGE:
-        per_page = 12
+        per_page = 25
 
     assets = Asset.objects.select_related('category', 'location', 'assigned_to').prefetch_related('photos').annotate(interest_count=Count('interests'))
     if category_id:
