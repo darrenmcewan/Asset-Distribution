@@ -12,6 +12,9 @@ from django.db.models import Max
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from PIL import Image
+from pillow_heif import register_heif_opener
+
+register_heif_opener()
 
 logger = logging.getLogger(__name__)
 
