@@ -927,16 +927,51 @@ def admin_users_view(request):
     users = (
         User.objects
         .select_related('profile', 'profile__branch')
-        .annotate(assigned_count=Count('assigned_assets'))
+        .annotate(
+            assigned_count=Count('assigned_assets'),
+            interest_count=Count('interests'),
+        )
         .order_by('username')
     )
     if branch_filter:
         users = users.filter(profile__branch__code=branch_filter)
 
+    # Build per-user assigned/interested item lists for popup JS
+    user_ids = [u.id for u in users]
+    assigned_assets = (
+        Asset.objects
+        .filter(assigned_to_id__in=user_ids)
+        .select_related('assigned_to')
+        .order_by('pk')
+    )
+    user_assigned = {}
+    for asset in assigned_assets:
+        user_assigned.setdefault(asset.assigned_to_id, []).append({
+            'id': asset.id,
+            'serial': asset.serial_number,
+            'name': asset.name,
+        })
+
+    interested_assets = (
+        Interest.objects
+        .filter(user_id__in=user_ids)
+        .select_related('asset')
+        .order_by('asset__pk')
+    )
+    user_interested = {}
+    for interest in interested_assets:
+        user_interested.setdefault(interest.user_id, []).append({
+            'id': interest.asset_id,
+            'serial': interest.asset.serial_number,
+            'name': interest.asset.name,
+        })
+
     return render(request, 'admin/users.html', {
         'users': users,
         'branches': Branch.objects.all(),
         'selected_branch': branch_filter,
+        'user_assigned_json': json.dumps(user_assigned),
+        'user_interested_json': json.dumps(user_interested),
     })
 
 
