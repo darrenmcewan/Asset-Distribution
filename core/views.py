@@ -82,7 +82,10 @@ def login_view(request):
         form = StyledLoginForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
+            prev = user.last_login.isoformat() if user.last_login else None
             auth_login(request, user)
+            if prev:
+                request.session['previous_login'] = prev
             return redirect('dashboard')
     else:
         form = StyledLoginForm(request)
