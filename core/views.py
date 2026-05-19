@@ -271,8 +271,7 @@ def browse_assets_view(request):
         assets = assets.filter(status=status_filter)
 
     sort_key, sort_dir = _parse_sort_params(request)
-    # Default ordering comes from model Meta: category__display_order, location__display_order, name
-    assets = _apply_sort(assets, sort_key, sort_dir, default_ordering=None)
+    assets = _apply_sort(assets, sort_key, sort_dir, default_ordering=['-pk'])
 
     my_interest_asset_ids = set(
         Interest.objects.filter(user=user).values_list('asset_id', flat=True)
