@@ -1095,6 +1095,35 @@ def admin_export_csv_view(request):
 
 
 @admin_required
+def admin_export_interests_csv_view(request):
+    """Export all interest records as CSV with user details and ranking."""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="interests_report.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['User Name', 'Email', 'Branch', 'Item #', 'Asset', 'Interest Ranking'])
+
+    qs = (
+        Interest.objects
+        .select_related('user', 'user__profile', 'user__profile__branch', 'asset')
+        .order_by('user__username', 'position')
+    )
+    for interest in qs:
+        user = interest.user
+        branch_name = ''
+        if hasattr(user, 'profile'):
+            branch_name = user.profile.branch.name
+        writer.writerow([
+            user.username,
+            user.email,
+            branch_name,
+            interest.asset.serial_number,
+            interest.asset.name,
+            interest.position,
+        ])
+    return response
+
+
+@admin_required
 def admin_history_view(request):
     """Chronological log of assignment events; filterable by asset and user."""
     events = (

@@ -76,6 +76,7 @@ urlpatterns = [
     path('admin-panel/users/<int:user_id>/toggle-active/', views.admin_toggle_active_view, name='admin_toggle_active'),
     path('admin-panel/reports/', views.admin_reports_view, name='admin_reports'),
     path('admin-panel/reports/export/', views.admin_export_csv_view, name='admin_export_csv'),
+    path('admin-panel/reports/export-interests/', views.admin_export_interests_csv_view, name='admin_export_interests_csv'),
     path('admin-panel/history/', views.admin_history_view, name='admin_history'),
     path('admin-panel/comments/<int:comment_id>/delete/', views.admin_delete_comment_view, name='admin_delete_comment'),
     path('admin-panel/disclaimers/', views.admin_disclaimers_view, name='admin_disclaimers'),
