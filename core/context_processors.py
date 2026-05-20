@@ -2,6 +2,8 @@
 Context processors for the Asset Distribution System.
 """
 
+from .models import SiteSetting
+
 
 def user_branch(request):
     """Expose the current user's branch (if any) to all templates."""
@@ -11,3 +13,9 @@ def user_branch(request):
         if profile:
             branch = profile.branch
     return {"user_branch": branch}
+
+
+def site_settings(request):
+    """Expose site-wide settings to all templates."""
+    settings = SiteSetting.get()
+    return {"interest_enabled": settings.interest_enabled}

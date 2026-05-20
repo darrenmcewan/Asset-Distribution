@@ -56,6 +56,7 @@ from .models import (
     DisclaimerMessage,
     Interest,
     Location,
+    SiteSetting,
     UserProfile,
 )
 
@@ -396,6 +397,9 @@ def admin_delete_comment_view(request, comment_id):
 @login_required
 @require_POST
 def toggle_interest_view(request, asset_id):
+    if not SiteSetting.get().interest_enabled:
+        return JsonResponse({'success': False, 'error': 'Interest feature is currently disabled'}, status=403)
+
     asset = get_object_or_404(Asset, pk=asset_id)
     if asset.status != 'available':
         return JsonResponse({'success': False, 'error': 'Item is no longer available'})
@@ -522,6 +526,15 @@ def upload_asset_view(request):
 
 @admin_required
 def admin_panel_view(request):
+    site_setting = SiteSetting.get()
+
+    if request.method == 'POST' and 'interest_enabled' in request.POST:
+        value = request.POST.get('interest_enabled') == 'true'
+        site_setting.interest_enabled = value
+        site_setting.save(update_fields=['interest_enabled'])
+        messages.success(request, 'Interest feature ' + ('enabled' if value else 'disabled') + '.')
+        return redirect('admin_panel')
+
     branch_stats = []
     for branch in Branch.objects.all():
         count = Asset.objects.filter(assigned_to__profile__branch=branch).count()
@@ -538,6 +551,7 @@ def admin_panel_view(request):
     return render(request, 'admin/panel.html', {
         'stats': stats,
         'branch_stats': branch_stats,
+        'site_setting': site_setting,
     })
 
 

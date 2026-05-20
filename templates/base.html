@@ -23,7 +23,9 @@
                     <nav class="nav">
                         <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Dashboard</a>
                         <a href="{% url 'browse_assets' %}" {% if request.resolver_match.url_name == 'browse_assets' %}class="active"{% endif %}>Browse</a>
+                        {% if interest_enabled or user.is_staff %}
                         <a href="{% url 'my_interests' %}" {% if request.resolver_match.url_name == 'my_interests' %}class="active"{% endif %}>My Interests</a>
+                        {% endif %}
                         <a href="{% url 'my_items' %}" {% if request.resolver_match.url_name == 'my_items' %}class="active"{% endif %}>My Items</a>
                         {% if user.is_staff %}<a href="{% url 'upload_asset' %}" {% if request.resolver_match.url_name == 'upload_asset' %}class="active"{% endif %}>Upload</a>{% endif %}
                         {% if user.is_staff %}<a href="{% url 'admin_panel' %}" class="btn btn-sm btn-primary">Admin</a>{% endif %}

@@ -358,3 +358,21 @@ class DisclaimerMessage(models.Model):
             strip=True,
         )
         return bleach.linkify(cleaned)
+
+
+class SiteSetting(models.Model):
+    """Singleton model for site-wide settings."""
+    interest_enabled = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Site Setting'
+        verbose_name_plural = 'Site Settings'
+
+    def __str__(self):
+        return 'Site Settings'
+
+    @classmethod
+    def get(cls):
+        """Return the singleton instance, creating it if necessary."""
+        instance, _ = cls.objects.get_or_create(pk=1)
+        return instance

@@ -2,6 +2,12 @@
 {% block title %}My Interests{% endblock %}
 {% block content %}
 <h1>My Interests</h1>
+
+{% if not interest_enabled %}
+<div class="card">
+    <p class="text-muted">The interest feature is currently unavailable. Please check back later.</p>
+</div>
+{% else %}
 <p class="text-light mb-3">Drag rows to reorder by priority. Position 1 is your most-wanted item.</p>
 
 {% if interests %}
@@ -39,6 +45,7 @@
     <p>You haven't expressed interest in any items yet.</p>
     <a href="{% url 'browse_assets' %}" class="btn btn-primary mt-2">Browse Assets</a>
 </div>
+{% endif %}
 {% endif %}
 {% endblock %}
 

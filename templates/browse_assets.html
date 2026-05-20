@@ -103,12 +103,12 @@
                 <span class="text-muted" style="font-size: 0.75rem; margin-left: 0.25rem;">{{ asset.serial_number }}</span>
             </p>
             <span class="badge badge-{{ asset.status }}">{{ asset.get_status_display }}</span>
-            {% if asset.interest_count %}
+            {% if interest_enabled and asset.interest_count %}
             <p class="interest-count"><strong>{{ asset.interest_count }}</strong> family member{{ asset.interest_count|pluralize }} want{{ asset.interest_count|pluralize:"s," }} this</p>
             {% endif %}
         </div>
         <div class="asset-card-footer">
-            {% if asset.status == 'available' %}
+            {% if asset.status == 'available' and interest_enabled %}
             <button class="interest-btn {% if asset.id in my_interest_asset_ids %}interested{% endif %}"
                     onclick="toggleInterest({{ asset.id }}, this)"
                     data-asset-id="{{ asset.id }}">
@@ -118,7 +118,7 @@
                 ♡ I Want This
                 {% endif %}
             </button>
-            {% else %}
+            {% elif asset.status != 'available' %}
             <span class="text-muted" style="font-size: 0.875rem;">
                 {% if asset.assigned_to %}
                 Claimed by {{ asset.assigned_to.username }}

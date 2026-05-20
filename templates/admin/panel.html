@@ -43,4 +43,25 @@
         <a href="{% url 'admin_export_csv' %}" class="btn btn-secondary">Export CSV</a>
     </div>
 </div>
+
+<div class="card">
+    <div class="card-header"><h3 class="card-title">Site Settings</h3></div>
+    <form method="post" action="{% url 'admin_panel' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label">Interest Feature</label>
+            <div class="radio-group">
+                <label class="radio-label">
+                    <input type="radio" name="interest_enabled" value="true" {% if site_setting.interest_enabled %}checked{% endif %}>
+                    Enabled
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="interest_enabled" value="false" {% if not site_setting.interest_enabled %}checked{% endif %}>
+                    Disabled
+                </label>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+    </form>
+</div>
 {% endblock %}
