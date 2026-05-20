@@ -17,5 +17,8 @@ def user_branch(request):
 
 def site_settings(request):
     """Expose site-wide settings to all templates."""
-    settings = SiteSetting.get()
-    return {"interest_enabled": settings.interest_enabled}
+    try:
+        settings = SiteSetting.get()
+        return {"interest_enabled": settings.interest_enabled}
+    except Exception:
+        return {"interest_enabled": True}
