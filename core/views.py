@@ -638,12 +638,24 @@ def admin_assets_view(request):
             'position': interest.position,
         })
 
+    # All active users for the "Other" assign option
+    all_users = User.objects.filter(is_active=True).select_related('profile__branch').order_by('username')
+    all_users_list = [
+        {
+            'id': u.id,
+            'username': u.username,
+            'branch': u.profile.branch.name if hasattr(u, 'profile') and u.profile.branch else '',
+        }
+        for u in all_users
+    ]
+
     return render(request, 'admin/assets.html', {
         'assets': page,
         'categories': Category.objects.all(),
         'locations': Location.objects.all(),
         'branches': Branch.objects.prefetch_related('users__user').all(),
         'asset_interests_json': json.dumps(asset_interests),
+        'all_users_json': json.dumps(all_users_list),
         'admin_assets_return_url': request.get_full_path(),
         'selected_category': category_id,
         'selected_location': location_id,

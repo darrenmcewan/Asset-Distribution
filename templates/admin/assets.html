@@ -179,11 +179,13 @@
             <input type="hidden" name="asset_id" id="assignAssetId">
             <input type="hidden" name="next" id="assignNext">
             <div class="form-group">
-                <label class="form-label">Assign to (interested users):</label>
+                <label class="form-label" id="assignLabel">Assign to (interested users):</label>
                 <select name="user_id" id="assignUserSelect" class="form-select" required>
                     <option value="">Select user...</option>
                 </select>
-                <p id="noInterestMsg" class="text-muted" style="display: none; font-size: 0.875rem; margin-top: 0.5rem;">No users have expressed interest in this item.</p>
+                <select id="assignAllUsersSelect" class="form-select" style="display: none; margin-top: 0.5rem;" required disabled>
+                    <option value="">Select user...</option>
+                </select>
             </div>
             <div class="flex gap-2">
                 <button type="submit" class="btn btn-primary" id="assignSubmitBtn">Assign</button>
@@ -199,6 +201,7 @@
 <script src="{% static 'js/interests-popup.js' %}"></script>
 <script>
 var assetInterests = {{ asset_interests_json|safe }};
+var allUsers = {{ all_users_json|safe }};
 
 function goToPage(input) {
     var page = parseInt(input.value, 10);
@@ -210,37 +213,91 @@ function goToPage(input) {
     window.location.search = params.toString();
 }
 
+function populateAllUsersSelect(selectEl) {
+    selectEl.innerHTML = '<option value="">Select user...</option>';
+    allUsers.forEach(function(u) {
+        var opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = u.username + (u.branch ? ' (' + u.branch + ')' : '');
+        selectEl.appendChild(opt);
+    });
+}
+
 function showAssignModal(assetId, assetName) {
     document.getElementById('assignAssetId').value = assetId;
     document.getElementById('assignNext').value = window.location.pathname + window.location.search + '#admin-asset-' + assetId;
     document.getElementById('assignModalTitle').textContent = 'Assign: ' + assetName;
 
-    var select = document.getElementById('assignUserSelect');
-    var noMsg = document.getElementById('noInterestMsg');
+    var interestSelect = document.getElementById('assignUserSelect');
+    var allUsersSelect = document.getElementById('assignAllUsersSelect');
     var submitBtn = document.getElementById('assignSubmitBtn');
+    var label = document.getElementById('assignLabel');
 
     // Clear existing options
-    select.innerHTML = '<option value="">Select user...</option>';
+    interestSelect.innerHTML = '<option value="">Select user...</option>';
 
     var interested = assetInterests[assetId] || [];
     if (interested.length > 0) {
+        // Show interest list with "Other…" option
         interested.forEach(function(item) {
             var opt = document.createElement('option');
             opt.value = item.user_id;
             opt.textContent = item.username + ' (' + item.branch + ') — priority #' + item.position;
-            select.appendChild(opt);
+            interestSelect.appendChild(opt);
         });
-        select.style.display = '';
-        noMsg.style.display = 'none';
+        var otherOpt = document.createElement('option');
+        otherOpt.value = '__other__';
+        otherOpt.textContent = 'Other…';
+        interestSelect.appendChild(otherOpt);
+
+        interestSelect.style.display = '';
+        interestSelect.name = 'user_id';
+        interestSelect.disabled = false;
+        interestSelect.required = true;
+        allUsersSelect.style.display = 'none';
+        allUsersSelect.name = '';
+        allUsersSelect.disabled = true;
+        allUsersSelect.required = false;
+        label.textContent = 'Assign to (interested users):';
         submitBtn.disabled = false;
     } else {
-        select.style.display = 'none';
-        noMsg.style.display = 'block';
-        submitBtn.disabled = true;
+        // No interests — show all-users select directly
+        interestSelect.style.display = 'none';
+        interestSelect.name = '';
+        interestSelect.disabled = true;
+        interestSelect.required = false;
+        populateAllUsersSelect(allUsersSelect);
+        allUsersSelect.style.display = '';
+        allUsersSelect.name = 'user_id';
+        allUsersSelect.disabled = false;
+        allUsersSelect.required = true;
+        label.textContent = 'Assign to:';
+        submitBtn.disabled = false;
     }
 
     document.getElementById('assignModal').style.display = 'flex';
 }
+
+// Cascading handler: switch between interest select and all-users select
+document.getElementById('assignUserSelect').addEventListener('change', function() {
+    var allUsersSelect = document.getElementById('assignAllUsersSelect');
+    if (this.value === '__other__') {
+        populateAllUsersSelect(allUsersSelect);
+        allUsersSelect.style.display = '';
+        allUsersSelect.name = 'user_id';
+        allUsersSelect.disabled = false;
+        allUsersSelect.required = true;
+        this.name = '';
+        this.required = false;
+    } else {
+        allUsersSelect.style.display = 'none';
+        allUsersSelect.name = '';
+        allUsersSelect.disabled = true;
+        allUsersSelect.required = false;
+        this.name = 'user_id';
+        this.required = true;
+    }
+});
 
 function hideAssignModal() {
     document.getElementById('assignModal').style.display = 'none';
