@@ -54,8 +54,8 @@ class AdminUnassignItemTests(TestCase):
         request.user = self.staff
         resp = admin_assets_view(request)
         body = resp.content.decode()
-        self.assertIn('Assign to someone else', body)
-        self.assertIn('Mark as available', body)
+        self.assertIn('Reassign', body)
+        self.assertIn('Mark available', body)
 
     def test_available_row_does_not_show_unassign_action(self):
         self.asset.assigned_to = None
@@ -66,8 +66,8 @@ class AdminUnassignItemTests(TestCase):
         request.user = self.staff
         resp = admin_assets_view(request)
         body = resp.content.decode()
-        self.assertNotIn('Mark as available', body)
-        self.assertNotIn('Assign to someone else', body)
+        self.assertNotIn('Mark available', body)
+        self.assertNotIn('Reassign', body)
 
     def test_non_admin_cannot_unassign(self):
         self.client.force_login(self.recipient)

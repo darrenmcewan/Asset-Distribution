@@ -115,7 +115,15 @@
                     </td>
                     <td>
                         {% if asset.assigned_to %}
-                        {{ asset.assigned_to.username }}
+                        <div class="flex gap-1 items-center" style="flex-wrap: wrap;">
+                            <span>{{ asset.assigned_to.username }}</span>
+                            <form method="post" action="{% url 'admin_mark_status' asset.id %}"
+                                  onsubmit="return confirm('Mark {{ asset.name|escapejs }} as available and unassign from {{ asset.assigned_to.username|escapejs }}?')" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="available">
+                                <button type="submit" class="btn btn-sm btn-secondary" title="Unassign and mark as available">Mark available</button>
+                            </form>
+                        </div>
                         {% else %}
                         <span class="text-muted">-</span>
                         {% endif %}
@@ -133,13 +141,7 @@
                             {% endif %}
                             {% if asset.assigned_to %}
                             <button type="button" class="btn btn-sm btn-primary"
-                                    onclick="showAssignModal({{ asset.id }}, '{{ asset.name|escapejs }}')">Assign to someone else</button>
-                            <form method="post" action="{% url 'admin_mark_status' asset.id %}"
-                                  onsubmit="return confirm('Mark {{ asset.name|escapejs }} as available and unassign from {{ asset.assigned_to.username|escapejs }}?')" style="display: inline;">
-                                {% csrf_token %}
-                                <input type="hidden" name="status" value="available">
-                                <button type="submit" class="btn btn-sm btn-secondary">Mark as available</button>
-                            </form>
+                                    onclick="showAssignModal({{ asset.id }}, '{{ asset.name|escapejs }}')">Reassign</button>
                             {% endif %}
                             <form method="post" action="{% url 'admin_delete_asset' asset.id %}" 
                                   onsubmit="return confirm('Delete {{ asset.name }}?')" style="display: inline;">
