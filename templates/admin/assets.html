@@ -121,6 +121,7 @@
                                   onsubmit="return confirm('Mark {{ asset.name|escapejs }} as available and unassign from {{ asset.assigned_to.username|escapejs }}?')" style="display: inline;">
                                 {% csrf_token %}
                                 <input type="hidden" name="status" value="available">
+                                <input type="hidden" name="next" value="{{ admin_assets_return_url }}#admin-asset-{{ asset.id }}">
                                 <button type="submit" class="btn btn-sm btn-secondary" title="Unassign and mark as available">Mark available</button>
                             </form>
                         </div>

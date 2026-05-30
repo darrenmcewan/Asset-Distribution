@@ -946,6 +946,9 @@ def admin_mark_status_view(request, asset_id):
                 to_status=status,
             )
         messages.success(request, f'"{asset.name}" marked as {status}.')
+    next_url = _safe_next_url(request, request.POST.get('next'))
+    if next_url:
+        return redirect(next_url)
     return redirect('admin_assets')
 
 
